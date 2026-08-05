@@ -1,0 +1,15 @@
+{
+  "name": "hr-management",
+  "private": true,
+  "version": "1.0.0",
+  "packageManager": "pnpm@10.22.0",
+   "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck"
+  },
+  "devDependencies": {
+    "turbo": "^2.10.8"
+  }
+}
