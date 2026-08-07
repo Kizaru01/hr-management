@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~57.0.9",
+    "@hr-management/validation": "workspace:*",
     "expo": "~57.0.10",
     "expo-constants": "~57.0.9",
     "expo-device": "~57.0.1",
@@ -29,15 +30,19 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "^57.0.1",
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "dev": "expo start",
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "typecheck": "tsc --noEmit"
   },
   "private": true
 }
