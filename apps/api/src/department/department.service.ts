@@ -1,10 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DepartmentRepository } from './department.repository';
 import type {
   CreateDepartmentInput,
   UpdateDepartmentInput,
 } from '@hr-management/validation';
-
+import { Prisma } from '../generated/prisma/client.js';
 @Injectable()
 export class DepartmentService {
   constructor(private readonly departmentRepository: DepartmentRepository) {}
@@ -20,23 +24,42 @@ export class DepartmentService {
   }
 
   async create(input: CreateDepartmentInput) {
-    const department = await this.departmentRepository.create(input);
+    const code = input.code.trim().toUpperCase();
 
-    return {
-      success: true,
-      message: 'Department created successfully.',
-      data: department,
-    };
+    const existingDepartment = await this.departmentRepository.findByCode(code);
+
+    if (existingDepartment) {
+      throw new ConflictException('Department code already exists.');
+    }
+
+    try {
+      const department = await this.departmentRepository.create({
+        ...input,
+        code,
+      });
+
+      return {
+        success: true,
+        message: 'Department created successfully.',
+        data: department,
+      };
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Department code or name already exists.');
+      }
+
+      throw error;
+    }
   }
 
   async findOne(id: string) {
     const department = await this.departmentRepository.findById(id);
 
     if (!department) {
-      return {
-        success: false,
-        message: 'Department not found.',
-      };
+      throw new NotFoundException('Department not found.');
     }
 
     return {

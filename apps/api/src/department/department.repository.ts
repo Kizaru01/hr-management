@@ -37,4 +37,10 @@ export class DepartmentRepository {
       },
     });
   }
+
+  findByCode(code: string) {
+    return this.prisma.department.findUnique({
+      where: { code },
+    });
+  }
 }
