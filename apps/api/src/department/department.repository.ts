@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
-import { CreateDepartmentInput } from '@hr-management/validation';
+import { CreateDepartmentData } from '@hr-management/validation';
 
 @Injectable()
 export class DepartmentRepository {
@@ -17,7 +17,7 @@ export class DepartmentRepository {
     });
   }
 
-  create(data: CreateDepartmentInput) {
+  create(data: CreateDepartmentData) {
     return this.prisma.department.create({
       data,
     });
@@ -41,6 +41,12 @@ export class DepartmentRepository {
   findByCode(code: string) {
     return this.prisma.department.findUnique({
       where: { code },
+    });
+  }
+
+  findByName(nameKey: string) {
+    return this.prisma.department.findUnique({
+      where: { nameKey },
     });
   }
 }

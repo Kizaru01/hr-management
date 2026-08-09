@@ -9,40 +9,50 @@ import type {
   UpdateDepartmentInput,
 } from '@hr-management/validation';
 import { Prisma } from '../generated/prisma/client.js';
+import { successResponse } from '../common/responses/success-response';
+import { errorResponse } from '../common/responses/failed-response';
 @Injectable()
 export class DepartmentService {
   constructor(private readonly departmentRepository: DepartmentRepository) {}
 
   async findAll() {
-    const departments = await this.departmentRepository.findAll();
+    try {
+      const departments = await this.departmentRepository.findAll();
 
-    return {
-      success: true,
-      message: 'Departments retrieved successfully.',
-      data: departments,
-    };
+      return successResponse(departments, 'Department retrieved successfully');
+    } catch (error) {
+      return errorResponse(error);
+    }
   }
 
   async create(input: CreateDepartmentInput) {
     const code = input.code.trim().toUpperCase();
 
-    const existingDepartment = await this.departmentRepository.findByCode(code);
+    const existingDepartmentCode =
+      await this.departmentRepository.findByCode(code);
 
-    if (existingDepartment) {
+    if (existingDepartmentCode) {
       throw new ConflictException('Department code already exists.');
     }
+    const name = input.name.trim();
 
+    const nameKey = name.toUpperCase();
+
+    const existingDepartmentName =
+      await this.departmentRepository.findByName(nameKey);
+
+    if (existingDepartmentName) {
+      throw new ConflictException('Department name already exists.');
+    }
     try {
       const department = await this.departmentRepository.create({
         ...input,
         code,
+        name,
+        nameKey,
       });
 
-      return {
-        success: true,
-        message: 'Department created successfully.',
-        data: department,
-      };
+      return successResponse(department, 'Department created successfully');
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -62,48 +72,33 @@ export class DepartmentService {
       throw new NotFoundException('Department not found.');
     }
 
-    return {
-      success: true,
-      message: 'Department retrieved successfully.',
-      data: department,
-    };
+    return successResponse(department, 'Department retrieved successfully');
   }
 
   async update(id: string, input: UpdateDepartmentInput) {
     const department = await this.departmentRepository.findById(id);
 
     if (!department) {
-      return {
-        success: false,
-        message: 'Department not found.',
-      };
+      throw new NotFoundException('Department not found.');
     }
 
     const updatedDepartment = await this.departmentRepository.update(id, input);
 
-    return {
-      success: true,
-      message: 'Department updated successfully.',
-      data: updatedDepartment,
-    };
+    return successResponse(
+      updatedDepartment,
+      'Updated department successfully',
+    );
   }
 
   async remove(id: string) {
     const existingDepartment = await this.departmentRepository.findById(id);
 
     if (!existingDepartment) {
-      return {
-        success: false,
-        message: 'Department not found.',
-      };
+      throw new NotFoundException('Department not found.');
     }
 
     const department = await this.departmentRepository.remove(id);
 
-    return {
-      success: true,
-      message: 'Department deleted successfully.',
-      data: department,
-    };
+    return successResponse(department, 'Department deleted successfully');
   }
 }

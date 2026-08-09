@@ -11,9 +11,16 @@ export const createDepartmentSchema = z.object({
     .trim()
     .min(2, "Department name must contain at least 2 characters.")
     .max(100, "Department name must not exceed 100 characters."),
-  description: z.string().trim().max(500, "Department description must not exceed 500 characters.").nullable().optional(),
+  description: z
+    .string()
+    .trim()
+    .max(500, "Department description must not exceed 500 characters.")
+    .nullable()
+    .optional(),
 });
 
-export type CreateDepartmentInput = z.infer<
-  typeof createDepartmentSchema
->;
+export type CreateDepartmentInput = z.infer<typeof createDepartmentSchema>;
+
+export type CreateDepartmentData = CreateDepartmentInput & {
+  nameKey: string;
+};

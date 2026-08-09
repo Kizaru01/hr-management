@@ -3,7 +3,11 @@ export function getFullName(
   lastName: string,
   middleName?: string,
 ): string {
-  return [firstName, middleName, lastName]
-    .filter(Boolean)
-    .join(" ");
+  return [firstName, middleName, lastName].filter(Boolean).join(" ");
+}
+export function normalizeName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }

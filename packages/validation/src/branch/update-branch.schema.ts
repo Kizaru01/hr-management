@@ -3,6 +3,4 @@ import { z } from "zod";
 
 export const updateBranchSchema = createBranchSchema.partial();
 
-export type UpdateBranchInput = z.infer<
-  typeof updateBranchSchema
->;
+export type UpdateBranchInput = z.infer<typeof updateBranchSchema>;

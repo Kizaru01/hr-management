@@ -4,6 +4,12 @@ export type PositionId = string;
 
 export interface Position {
   id: PositionId;
-  departmentId: DepartmentId;
   name: string;
+  description?: string | null;
+  salary: number;
+  allowance: number;
+  isActive: boolean;
+  departmentId: DepartmentId;
+  createdAt: Date;
+  updatedAt: Date;
 }
