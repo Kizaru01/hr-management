@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { Prisma, UserRole } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
 @Injectable()
@@ -17,9 +18,6 @@ export class UserRepository {
   findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
-      include: {
-        employee: true,
-      },
     });
   }
 
@@ -30,14 +28,19 @@ export class UserRepository {
       },
     });
   }
-  create(data: {
-    email: string;
-    role: 'admin' | 'hr' | 'employee';
-    employeeId?: string;
-    activationTokenHash: string;
-    activationExpiresAt: Date;
-  }) {
-    return this.prisma.user.create({
+  create(
+    data: {
+      email: string;
+      role: UserRole;
+      employeeId?: string;
+      activationTokenHash: string;
+      activationExpiresAt: Date;
+    },
+    tx?: Prisma.TransactionClient,
+  ) {
+    const client = tx ?? this.prisma;
+
+    return client.user.create({
       data,
     });
   }
@@ -48,6 +51,33 @@ export class UserRepository {
       },
       data: {
         userId,
+      },
+    });
+  }
+  findByActivationTokenHash(activationTokenHash: string) {
+    return this.prisma.user.findFirst({
+      where: {
+        activationTokenHash,
+        status: 'pending',
+      },
+    });
+  }
+  activate(id: string, passwordHash: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        passwordHash,
+        status: 'active',
+        activationTokenHash: null,
+        activationExpiresAt: null,
+      },
+    });
+  }
+  updateLastLogin(id: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        lastLoginAt: new Date(),
       },
     });
   }

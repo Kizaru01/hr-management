@@ -6,6 +6,6 @@ import { BranchRepository } from './branch.respository';
 @Module({
   controllers: [BranchController],
   providers: [BranchService, BranchRepository],
-  exports: [BranchService],
+  exports: [BranchRepository],
 })
 export class BranchModule {}

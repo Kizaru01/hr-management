@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
-import { UserController } from './user.controller';
-import { UserService } from './user.service';
-import { UserRepository } from './user.repository';
-import { EmployeeRepository } from '../employee/employee.repository';
-import { ActivationTokenService } from '../auth/auth-activation.service';
+import { EmployeeRepository } from '../employee/employee.repository.js';
+import { UserController } from './user.controller.js';
+import { UserRepository } from './user.repository.js';
+import { UserService } from './user.service.js';
+import { SecurityModule } from '../common/security/security.module.js';
 
 @Module({
-  imports: [EmployeeRepository, ActivationTokenService],
+  imports: [SecurityModule],
   controllers: [UserController],
-  providers: [UserService, UserRepository],
+  providers: [UserService, UserRepository, EmployeeRepository],
+  exports: [UserRepository],
 })
 export class UserModule {}

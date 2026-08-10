@@ -4,7 +4,7 @@ import type {
   UpdateEmployeeInput,
 } from '@hr-management/validation';
 import { PrismaService } from '../prisma/prisma.service.js';
-
+import { Prisma } from '../generated/prisma/client.js';
 @Injectable()
 export class EmployeeRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -90,10 +90,16 @@ export class EmployeeRepository {
 
     return `EMP-${counter.value.toString().padStart(4, '0')}`;
   }
-  linkUser(employeeId: string, userId: string) {
-    return this.prisma.employee.update({
-      where: { id: employeeId },
-      data: { userId },
+  linkUser(employeeId: string, userId: string, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+
+    return client.employee.update({
+      where: {
+        id: employeeId,
+      },
+      data: {
+        userId,
+      },
     });
   }
 }

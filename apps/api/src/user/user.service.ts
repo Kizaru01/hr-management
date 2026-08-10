@@ -5,10 +5,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { CreateUserInput } from '@hr-management/validation';
-import { ActivationTokenService } from '../auth/auth-activation.service';
 import { successResponse } from '../common/responses/success-response.js';
 import { EmployeeRepository } from '../employee/employee.repository.js';
 import { UserRepository } from './user.repository.js';
+import { PrismaService } from '../prisma/prisma.service';
+import { ActivationTokenService } from '../common/security/activation-token.service.js';
 
 @Injectable()
 export class UserService {
@@ -16,6 +17,7 @@ export class UserService {
     private readonly userRepository: UserRepository,
     private readonly activationTokenService: ActivationTokenService,
     private readonly employeeRepository: EmployeeRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   async create(input: CreateUserInput) {
@@ -32,7 +34,9 @@ export class UserService {
         throw new BadRequestException('Employee is required.');
       }
 
-      const employee = await this.employeeRepository.findById(input.employeeId);
+      const employee = await this.employeeRepository.findByEmployeeId(
+        input.employeeId,
+      );
 
       if (!employee) {
         throw new NotFoundException('Employee not found.');
@@ -45,16 +49,30 @@ export class UserService {
 
     const activation = this.activationTokenService.generate();
 
-    const user = await this.userRepository.create({
-      email: normalizedEmail,
-      role: input.role,
-      activationTokenHash: activation.tokenHash,
-      activationExpiresAt: activation.expiresAt,
-    });
+    const user = await this.prisma.$transaction(async (tx) => {
+      const createdUser = await this.userRepository.create(
+        {
+          email: normalizedEmail,
+          role: input.role,
+          activationTokenHash: activation.tokenHash,
+          activationExpiresAt: activation.expiresAt,
+        },
+        tx,
+      );
 
-    if (input.employeeId) {
-      await this.employeeRepository.linkUser(input.employeeId, user.id);
-    }
+      if (input.employeeId) {
+        const employee = await this.employeeRepository.findByEmployeeId(
+          input.employeeId,
+        );
+        if (!employee) {
+          throw new NotFoundException('Employee not found.');
+        }
+
+        await this.employeeRepository.linkUser(employee.id, createdUser.id, tx);
+      }
+
+      return createdUser;
+    });
 
     return successResponse(
       {

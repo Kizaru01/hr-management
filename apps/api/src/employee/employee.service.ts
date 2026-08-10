@@ -25,21 +25,20 @@ export class EmployeeService {
   ) {}
 
   async create(input: CreateEmployeeInput) {
-    const { departmentId, positionId } = input;
+    const { departmentId, positionId, branchId } = input;
 
-    await this.validateDepartmentAndPosition(departmentId, positionId);
+    await this.validateDepartmentBranchAndPosition(
+      departmentId,
+      positionId,
+      branchId,
+    );
 
-    const branch = await this.branchRepository.findById(input.branchId);
-
-    if (!branch) {
-      throw new NotFoundException('Branch not found.');
-    }
     const normalizedEmail = input.email.trim().toLowerCase();
 
-    const existingEmailEmployee =
+    const existingEmployee =
       await this.employeeRepository.findByEmail(normalizedEmail);
 
-    if (existingEmailEmployee) {
+    if (existingEmployee) {
       throw new ConflictException(
         'An employee with this email already exists.',
       );
@@ -112,9 +111,10 @@ export class EmployeeService {
       updateData.departmentId !== undefined ||
       updateData.positionId !== undefined
     ) {
-      await this.validateDepartmentAndPosition(
+      await this.validateDepartmentBranchAndPosition(
         nextDepartmentId,
         nextPositionId,
+        nextBranchId,
       );
     }
 
@@ -184,13 +184,15 @@ export class EmployeeService {
     }
   }
 
-  private async validateDepartmentAndPosition(
+  private async validateDepartmentBranchAndPosition(
     departmentId: string,
     positionId: string,
+    branchId: string,
   ) {
-    const [department, position] = await Promise.all([
+    const [department, position, branch] = await Promise.all([
       this.departmentRepository.findById(departmentId),
       this.positionRepository.findById(positionId),
+      this.branchRepository.findById(branchId),
     ]);
 
     if (!department) {
@@ -205,6 +207,10 @@ export class EmployeeService {
       throw new BadRequestException(
         'Position does not belong to the selected department.',
       );
+    }
+
+    if (!branch) {
+      throw new NotFoundException('Branch not found.');
     }
   }
 }

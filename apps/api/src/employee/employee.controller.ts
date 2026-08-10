@@ -6,15 +6,20 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
 import { EmployeeService } from './employee.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { Roles } from '../auth/decorators/roles.decorator.js';
 
 @Controller('employee')
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
+  @UseGuards(JwtAuthGuard)
+  @Roles('admin', 'hr')
   @Get()
   findAll() {
     return this.employeeService.findAll();
