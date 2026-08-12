@@ -1,6 +1,7 @@
 import type {
   CreateEmployeeInput,
   UpdateEmployeeInput,
+  UpdateMyProfileInput,
 } from '@hr-management/validation';
 import {
   BadRequestException,
@@ -67,13 +68,20 @@ export class EmployeeService {
       throw error;
     }
   }
+  async findMe(userId: string) {
+    const employee = await this.employeeRepository.findByUserId(userId);
 
+    if (!employee) {
+      throw new NotFoundException('Employee not found.');
+    }
+
+    return successResponse(employee, 'Employee retrieved successfully.');
+  }
   async findAll() {
     const employees = await this.employeeRepository.findAll();
 
     return successResponse(employees, 'Employees retrieved successfully.');
   }
-
   async findOne(id: string) {
     const employee = await this.employeeRepository.findById(id);
 
@@ -160,7 +168,20 @@ export class EmployeeService {
       throw error;
     }
   }
+  async updateMe(userId: string, input: UpdateMyProfileInput) {
+    const employee = await this.employeeRepository.findByUserId(userId);
 
+    if (!employee) {
+      throw new NotFoundException('Employee not found.');
+    }
+
+    const updatedEmployee = await this.employeeRepository.updateByUserId(
+      userId,
+      input,
+    );
+
+    return successResponse(updatedEmployee, 'Profile updated successfully.');
+  }
   async remove(id: string) {
     const existingEmployee = await this.employeeRepository.findById(id);
 

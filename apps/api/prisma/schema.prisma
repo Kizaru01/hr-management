@@ -27,6 +27,22 @@ enum UserStatus {
   disabled
 }
 
+enum LeaveType {
+  vacation
+  sick
+  emergency
+  maternity
+  paternity
+  unpaid
+}
+
+enum LeaveStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
@@ -93,6 +109,8 @@ model Employee {
   employmentType   String
   employmentStatus String   @default("active")
 
+  leaveRequests LeaveRequest[]
+
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id])
 
@@ -127,6 +145,30 @@ model Branch {
   isActive      Boolean  @default(true)
 
   employees Employee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model LeaveRequest {
+  id String @id @default(cuid())
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+
+  leaveType LeaveType
+
+  reason String
+
+  startDate DateTime
+  endDate   DateTime
+
+  status LeaveStatus @default(pending)
+
+  approvedById String?
+  approvedAt   DateTime?
+
+  remarks String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type {
   CreateEmployeeInput,
   UpdateEmployeeInput,
+  UpdateMyProfileInput,
 } from '@hr-management/validation';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../generated/prisma/client.js';
@@ -28,7 +29,18 @@ export class EmployeeRepository {
       },
     });
   }
-
+  async findByUserId(userId: string) {
+    return this.prisma.employee.findUnique({
+      where: {
+        userId,
+      },
+      include: {
+        department: true,
+        position: true,
+        branch: true,
+      },
+    });
+  }
   findByEmail(email: string) {
     return this.prisma.employee.findUnique({
       where: { email },
@@ -63,6 +75,19 @@ export class EmployeeRepository {
       include: {
         department: true,
         position: true,
+      },
+    });
+  }
+  updateByUserId(userId: string, input: UpdateMyProfileInput) {
+    return this.prisma.employee.update({
+      where: {
+        userId,
+      },
+      data: input,
+      include: {
+        department: true,
+        position: true,
+        branch: true,
       },
     });
   }

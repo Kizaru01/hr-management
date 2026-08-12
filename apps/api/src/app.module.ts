@@ -8,6 +8,7 @@ import { EmployeeModule } from './employee/employee.module';
 import { BranchModule } from './branch/branch.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { LeaveModule } from './leave/leave.module';
 @Module({
   imports: [
     DepartmentModule,
@@ -17,6 +18,7 @@ import { AuthModule } from './auth/auth.module';
     BranchModule,
     UserModule,
     AuthModule,
+    LeaveModule,
   ],
   controllers: [AppController],
   providers: [AppService],
