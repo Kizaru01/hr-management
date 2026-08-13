@@ -9,6 +9,8 @@ import { BranchModule } from './branch/branch.module';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { LeaveModule } from './leave/leave.module';
+import { AttendanceModule } from './attendance/attendance.module';
+
 @Module({
   imports: [
     DepartmentModule,
@@ -19,6 +21,7 @@ import { LeaveModule } from './leave/leave.module';
     UserModule,
     AuthModule,
     LeaveModule,
+    AttendanceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

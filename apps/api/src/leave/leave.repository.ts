@@ -24,14 +24,19 @@ export class LeaveRepository {
       },
     });
   }
-  update(id: string, data: Prisma.LeaveRequestUpdateInput) {
-    return this.prisma.leaveRequest.update({
-      where: { id },
+  async updatePending(
+    id: string,
+    data: Prisma.LeaveRequestUpdateManyMutationInput,
+  ) {
+    const [leave] = await this.prisma.leaveRequest.updateManyAndReturn({
+      where: { id, status: 'pending' },
       data,
       include: {
         employee: true,
       },
     });
+
+    return leave ?? null;
   }
   findById(id: string) {
     return this.prisma.leaveRequest.findUnique({
