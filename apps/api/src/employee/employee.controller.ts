@@ -29,25 +29,22 @@ export class EmployeeController {
     return this.employeeService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.employeeService.findOne(id);
+  @Post()
+  create(@Body() input: CreateEmployeeDto) {
+    return this.employeeService.create(input);
   }
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
   findMe(@CurrentUser() user: AuthenticatedUser) {
     return this.employeeService.findMe(user.id);
   }
 
-  @Post()
-  create(@Body() input: CreateEmployeeDto) {
-    return this.employeeService.create(input);
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.employeeService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() input: UpdateEmployeeDto) {
-    return this.employeeService.update(id, input);
-  }
   @Patch('me')
   @UseGuards(JwtAuthGuard)
   updateMe(
@@ -55,6 +52,11 @@ export class EmployeeController {
     @Body() input: UpdateMyProfileDto,
   ) {
     return this.employeeService.updateMe(user.id, input);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() input: UpdateEmployeeDto) {
+    return this.employeeService.update(id, input);
   }
 
   @Delete(':id')

@@ -29,7 +29,7 @@ export class EmployeeRepository {
       },
     });
   }
-  async findByUserId(userId: string) {
+  findByUserId(userId: string) {
     return this.prisma.employee.findUnique({
       where: {
         userId,
