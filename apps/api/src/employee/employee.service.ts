@@ -204,7 +204,6 @@ export class EmployeeService {
       throw error;
     }
   }
-
   private async validateDepartmentBranchAndPosition(
     departmentId: string,
     positionId: string,
