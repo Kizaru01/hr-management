@@ -8,5 +8,6 @@ import { LeaveRepository } from './leave.repository';
   imports: [EmployeeModule],
   providers: [LeaveService, LeaveRepository],
   controllers: [LeaveController],
+  exports: [LeaveRepository, LeaveService],
 })
 export class LeaveModule {}

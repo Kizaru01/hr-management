@@ -73,11 +73,20 @@ export class LeaveService {
       throw new NotFoundException('Approver employee profile not found.');
     }
 
-    const approvedLeave = await this.leaveRepository.update(leaveRequestId, {
-      status: 'approved',
-      approvedAt: new Date(),
-      approvedById: approver.id,
-    });
+    const approvedLeave = await this.leaveRepository.updatePending(
+      leaveRequestId,
+      {
+        status: 'approved',
+        approvedAt: new Date(),
+        approvedById: approver.id,
+      },
+    );
+
+    if (!approvedLeave) {
+      throw new BadRequestException(
+        'Only pending leave requests can be approved.',
+      );
+    }
 
     return successResponse(
       approvedLeave,
@@ -107,12 +116,21 @@ export class LeaveService {
       throw new NotFoundException('Approver employee profile not found.');
     }
 
-    const rejectedLeave = await this.leaveRepository.update(leaveRequestId, {
-      status: 'rejected',
-      approvedById: approver.id,
-      approvedAt: new Date(),
-      remarks: input.remarks,
-    });
+    const rejectedLeave = await this.leaveRepository.updatePending(
+      leaveRequestId,
+      {
+        status: 'rejected',
+        approvedById: approver.id,
+        approvedAt: new Date(),
+        remarks: input.remarks,
+      },
+    );
+
+    if (!rejectedLeave) {
+      throw new BadRequestException(
+        'Only pending leave requests can be rejected.',
+      );
+    }
 
     return successResponse(
       rejectedLeave,
@@ -145,9 +163,18 @@ export class LeaveService {
       );
     }
 
-    const cancelledLeave = await this.leaveRepository.update(leaveRequestId, {
-      status: 'cancelled',
-    });
+    const cancelledLeave = await this.leaveRepository.updatePending(
+      leaveRequestId,
+      {
+        status: 'cancelled',
+      },
+    );
+
+    if (!cancelledLeave) {
+      throw new BadRequestException(
+        'Only pending leave requests can be cancelled.',
+      );
+    }
 
     return successResponse(
       cancelledLeave,

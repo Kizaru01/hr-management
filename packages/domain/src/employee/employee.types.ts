@@ -10,7 +10,7 @@ export type EmployeeId = string;
 
 export interface Employee {
   id: EmployeeId;
-  employeeId: string;
+  employeeNumber: string;
 
   firstName: string;
   middleName?: string | null;

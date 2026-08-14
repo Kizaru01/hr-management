@@ -24,14 +24,19 @@ export class LeaveRepository {
       },
     });
   }
-  update(id: string, data: Prisma.LeaveRequestUpdateInput) {
-    return this.prisma.leaveRequest.update({
-      where: { id },
+  async updatePending(
+    id: string,
+    data: Prisma.LeaveRequestUpdateManyMutationInput,
+  ) {
+    const [leave] = await this.prisma.leaveRequest.updateManyAndReturn({
+      where: { id, status: 'pending' },
       data,
       include: {
         employee: true,
       },
     });
+
+    return leave ?? null;
   }
   findById(id: string) {
     return this.prisma.leaveRequest.findUnique({
@@ -54,6 +59,36 @@ export class LeaveRepository {
       },
       orderBy: {
         createdAt: 'desc',
+      },
+    });
+  }
+  findApprovedForDate(employeeId: string, workDate: Date) {
+    return this.prisma.leaveRequest.findFirst({
+      where: {
+        employeeId,
+        status: 'approved',
+        startDate: {
+          lte: workDate,
+        },
+        endDate: {
+          gte: workDate,
+        },
+      },
+    });
+  }
+  findApprovedForDateRange(employeeId: string, from: Date, to: Date) {
+    return this.prisma.leaveRequest.findMany({
+      where: {
+        employeeId,
+        status: 'approved',
+
+        startDate: {
+          lte: to,
+        },
+
+        endDate: {
+          gte: from,
+        },
       },
     });
   }

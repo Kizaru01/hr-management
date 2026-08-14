@@ -43,6 +43,16 @@ enum LeaveStatus {
   cancelled
 }
 
+enum Weekday {
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+  saturday
+  sunday
+}
+
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
@@ -56,6 +66,42 @@ model User {
   lastLoginAt DateTime?
 
   employee Employee?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Employee {
+  id             String @id @default(cuid())
+  employeeNumber String @unique
+
+  firstName  String
+  middleName String?
+  lastName   String
+  email      String  @unique
+
+  phoneNumber String?
+  avatar      String?
+
+  hireDate         DateTime
+  employmentType   String
+  employmentStatus String   @default("active")
+
+  leaveRequests    LeaveRequest[]
+  attendances      Attendance[]
+  shiftAssignments EmployeeShift[]
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  positionId String
+  position   Position @relation(fields: [positionId], references: [id])
+
+  branchId String?
+  branch   Branch? @relation(fields: [branchId], references: [id])
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -91,40 +137,6 @@ model Position {
   updatedAt DateTime @updatedAt
 
   @@unique([departmentId, name])
-}
-
-model Employee {
-  id         String @id @default(cuid())
-  employeeId String @unique
-
-  firstName  String
-  middleName String?
-  lastName   String
-  email      String  @unique
-
-  phoneNumber String?
-  avatar      String?
-
-  hireDate         DateTime
-  employmentType   String
-  employmentStatus String   @default("active")
-
-  leaveRequests LeaveRequest[]
-
-  departmentId String
-  department   Department @relation(fields: [departmentId], references: [id])
-
-  positionId String
-  position   Position @relation(fields: [positionId], references: [id])
-
-  branchId String?
-  branch   Branch? @relation(fields: [branchId], references: [id])
-
-  userId String? @unique
-  user   User?   @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Counter {
@@ -172,4 +184,62 @@ model LeaveRequest {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Attendance {
+  id String @id @default(cuid())
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+
+  workDate DateTime @db.Date
+
+  lateMinutes      Int @default(0)
+  undertimeMinutes Int @default(0)
+
+  checkInAt  DateTime
+  checkOutAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([employeeId, workDate])
+  @@index([workDate])
+}
+
+model Shift {
+  id String @id @default(cuid())
+
+  name      String @unique
+  startTime String
+  endTime   String
+
+  isActive Boolean @default(true)
+
+  employeeAssignments EmployeeShift[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmployeeShift {
+  id String @id @default(cuid())
+
+  workDays Weekday[]
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+
+  shiftId String
+  shift   Shift  @relation(fields: [shiftId], references: [id])
+
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([shiftId])
+  @@index([employeeId, effectiveFrom])
 }
