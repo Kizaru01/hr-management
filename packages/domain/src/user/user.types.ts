@@ -9,6 +9,7 @@ export interface User {
   isActive: boolean;
   lastLoginAt?: Date | null;
 
+  /** Internal Employee.id reference, not the business employee number. */
   employeeId?: string | null;
 
   createdAt: Date;

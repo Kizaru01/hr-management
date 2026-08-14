@@ -45,13 +45,14 @@ export class EmployeeService {
       );
     }
 
-    const employeeId = await this.employeeRepository.generateEmployeeId();
+    const employeeNumber =
+      await this.employeeRepository.generateEmployeeNumber();
 
     try {
       const employee = await this.employeeRepository.create({
         ...input,
         email: normalizedEmail,
-        employeeId,
+        employeeNumber,
       });
 
       return successResponse(employee, 'Employee created successfully.');
@@ -61,7 +62,7 @@ export class EmployeeService {
         error.code === 'P2002'
       ) {
         throw new ConflictException(
-          'An employee with this email or employee ID already exists.',
+          'An employee with this email or employee number already exists.',
         );
       }
 

@@ -6,7 +6,7 @@ export const createUserSchema = z.object({
 
   role: z.enum(USER_ROLES),
 
-  employeeId: z.string().trim().optional(),
+  employeeNumber: z.string().trim().optional(),
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;

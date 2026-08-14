@@ -30,12 +30,12 @@ export class UserService {
     }
 
     if (input.role === 'employee') {
-      if (!input.employeeId) {
+      if (!input.employeeNumber) {
         throw new BadRequestException('Employee is required.');
       }
 
-      const employee = await this.employeeRepository.findByEmployeeId(
-        input.employeeId,
+      const employee = await this.employeeRepository.findByEmployeeNumber(
+        input.employeeNumber,
       );
 
       if (!employee) {
@@ -60,9 +60,9 @@ export class UserService {
         tx,
       );
 
-      if (input.employeeId) {
-        const employee = await this.employeeRepository.findByEmployeeId(
-          input.employeeId,
+      if (input.employeeNumber) {
+        const employee = await this.employeeRepository.findByEmployeeNumber(
+          input.employeeNumber,
         );
         if (!employee) {
           throw new NotFoundException('Employee not found.');

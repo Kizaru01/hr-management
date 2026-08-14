@@ -32,6 +32,7 @@ export class UserRepository {
     data: {
       email: string;
       role: UserRole;
+      /** Internal Employee.id reference, not the business employee number. */
       employeeId?: string;
       activationTokenHash: string;
       activationExpiresAt: Date;
@@ -44,10 +45,10 @@ export class UserRepository {
       data,
     });
   }
-  updateEmployee(employeeId: string, userId: string) {
+  updateEmployee(id: string, userId: string) {
     return this.prisma.employee.update({
       where: {
-        id: employeeId,
+        id,
       },
       data: {
         userId,

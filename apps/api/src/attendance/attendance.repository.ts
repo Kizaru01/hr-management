@@ -56,4 +56,18 @@ export class AttendanceRepository {
       },
     });
   }
+  findByEmployeeAndDateRange(employeeId: string, from: Date, to: Date) {
+    return this.prisma.attendance.findMany({
+      where: {
+        employeeId,
+        workDate: {
+          gte: from,
+          lte: to,
+        },
+      },
+      orderBy: {
+        workDate: 'asc',
+      },
+    });
+  }
 }

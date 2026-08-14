@@ -10,12 +10,22 @@ import { getWorkDate } from './attendance-date';
 import { AttendanceRepository } from './attendance.repository';
 import { Prisma } from '../generated/prisma/client.js';
 import { AttendanceQueryInput } from '@hr-management/validation';
+import { EmployeeShiftRepository } from '../shift/employee-shift.repository';
+import {
+  getDatesInRange,
+  getShiftDateTime,
+  getShiftEndDateTime,
+} from './attendance-time';
+import { getAttendanceStatus, getWeekday } from './attendance-status';
+import { LeaveRepository } from '../leave/leave.repository';
 
 @Injectable()
 export class AttendanceService {
   constructor(
     private readonly employeeRepository: EmployeeRepository,
     private readonly attendanceRepository: AttendanceRepository,
+    private readonly employeeShiftRepository: EmployeeShiftRepository,
+    private readonly leaveRepository: LeaveRepository,
   ) {}
 
   async checkIn(userId: string) {
@@ -38,6 +48,23 @@ export class AttendanceService {
       throw new ConflictException('You have already checked in today.');
     }
 
+    const assignment = await this.employeeShiftRepository.findActiveAssignment(
+      employee.id,
+      workDate,
+    );
+
+    if (!assignment) {
+      throw new BadRequestException('No active shift is assigned for today.');
+    }
+
+    const expectedStart = getShiftDateTime(
+      workDate,
+      assignment.shift.startTime,
+    );
+
+    const lateMilliseconds = now.getTime() - expectedStart.getTime();
+
+    const lateMinutes = Math.max(0, Math.floor(lateMilliseconds / 60_000));
     try {
       const attendance = await this.attendanceRepository.create({
         employee: {
@@ -47,6 +74,7 @@ export class AttendanceService {
         },
         workDate,
         checkInAt: now,
+        lateMinutes,
       });
 
       return successResponse(attendance, 'Checked in successfully.');
@@ -86,32 +114,73 @@ export class AttendanceService {
       throw new ConflictException('You have already checked out today.');
     }
 
+    const assignment = await this.employeeShiftRepository.findActiveAssignment(
+      employee.id,
+      workDate,
+    );
+
+    if (!assignment) {
+      throw new BadRequestException('No active shift is assigned for today.');
+    }
+
+    const expectedEnd = getShiftEndDateTime(
+      workDate,
+      assignment.shift.startTime,
+      assignment.shift.endTime,
+    );
+
+    const undertimeMilliseconds = expectedEnd.getTime() - now.getTime();
+
+    const undertimeMinutes = Math.max(
+      0,
+      Math.floor(undertimeMilliseconds / 60_000),
+    );
+
     const updatedAttendance = await this.attendanceRepository.update(
       attendance.id,
       {
         checkOutAt: now,
+        undertimeMinutes,
       },
     );
 
     return successResponse(updatedAttendance, 'Checked out successfully.');
   }
 
-  async findMine(userId: string) {
+  async findMine(userId: string, from?: string, to?: string) {
     const employee = await this.employeeRepository.findByUserId(userId);
 
     if (!employee) {
       throw new NotFoundException('Employee profile not found.');
     }
+    if ((from && !to) || (!from && to)) {
+      throw new BadRequestException('Both from and to dates are required.');
+    }
+    if (from && to && from > to) {
+      throw new BadRequestException('From date cannot be after to date.');
+    }
+    const attendances =
+      from && to
+        ? await this.attendanceRepository.findByEmployeeAndDateRange(
+            employee.id,
+            new Date(`${from}T00:00:00.000Z`),
+            new Date(`${to}T00:00:00.000Z`),
+          )
+        : await this.attendanceRepository.findByEmployeeId(employee.id);
 
-    const attendances = await this.attendanceRepository.findByEmployeeId(
-      employee.id,
-    );
+    const data = attendances.map((attendance) => ({
+      ...attendance,
 
-    return successResponse(
-      attendances,
-      'Attendance records retrieved successfully.',
-    );
+      status: getAttendanceStatus({
+        checkOutAt: attendance.checkOutAt,
+        lateMinutes: attendance.lateMinutes,
+        undertimeMinutes: attendance.undertimeMinutes,
+      }),
+    }));
+
+    return successResponse(data, 'Attendance records retrieved successfully.');
   }
+
   async findAll(input: AttendanceQueryInput) {
     const workDate = input.date
       ? new Date(`${input.date}T00:00:00.000Z`)
@@ -120,9 +189,267 @@ export class AttendanceService {
     const attendances =
       await this.attendanceRepository.findAllByWorkDate(workDate);
 
-    return successResponse(
-      attendances,
-      'Attendance records retrieved successfully.',
+    const data = attendances.map((attendance) => ({
+      ...attendance,
+      status: getAttendanceStatus({
+        checkOutAt: attendance.checkOutAt,
+        lateMinutes: attendance.lateMinutes,
+        undertimeMinutes: attendance.undertimeMinutes,
+      }),
+    }));
+
+    return successResponse(data, 'Attendance records retrieved successfully.');
+  }
+  async getDailyStatus(userId: string, workDate: Date) {
+    const employee = await this.employeeRepository.findByUserId(userId);
+
+    if (!employee) {
+      throw new NotFoundException('Employee profile not found.');
+    }
+
+    const assignment = await this.employeeShiftRepository.findActiveAssignment(
+      employee.id,
+      workDate,
     );
+
+    if (!assignment) {
+      return successResponse(
+        {
+          workDate,
+          status: 'rest_day',
+        },
+        'Daily attendance status retrieved successfully.',
+      );
+    }
+
+    const weekday = getWeekday(workDate);
+
+    if (!assignment.workDays.includes(weekday)) {
+      return successResponse(
+        {
+          workDate,
+          status: 'rest_day',
+        },
+        'Daily attendance status retrieved successfully.',
+      );
+    }
+
+    const approvedLeave = await this.leaveRepository.findApprovedForDate(
+      employee.id,
+      workDate,
+    );
+
+    if (approvedLeave) {
+      return successResponse(
+        {
+          workDate,
+          status: 'on_leave',
+          leave: approvedLeave,
+        },
+        'Daily attendance status retrieved successfully.',
+      );
+    }
+
+    const attendance =
+      await this.attendanceRepository.findByEmployeeAndWorkDate(
+        employee.id,
+        workDate,
+      );
+
+    if (attendance) {
+      return successResponse(
+        {
+          ...attendance,
+          status: getAttendanceStatus({
+            checkOutAt: attendance.checkOutAt,
+            lateMinutes: attendance.lateMinutes,
+            undertimeMinutes: attendance.undertimeMinutes,
+          }),
+        },
+        'Daily attendance status retrieved successfully.',
+      );
+    }
+
+    const expectedEnd = getShiftEndDateTime(
+      workDate,
+      assignment.shift.startTime,
+      assignment.shift.endTime,
+    );
+
+    const status = new Date() > expectedEnd ? 'absent' : 'scheduled';
+
+    return successResponse(
+      {
+        workDate,
+        status,
+      },
+      'Daily attendance status retrieved successfully.',
+    );
+  }
+  async getMySummary(userId: string, from: string, to: string) {
+    const employee = await this.employeeRepository.findByUserId(userId);
+
+    if (!employee) {
+      throw new NotFoundException('Employee profile not found.');
+    }
+
+    const { fromDate, toDate } = this.parseDateRange(from, to);
+
+    const summary = await this.buildSummary(employee.id, fromDate, toDate);
+
+    return successResponse(
+      summary,
+      'Attendance summary retrieved successfully.',
+    );
+  }
+  async getEmployeeSummary(employeeId: string, from: string, to: string) {
+    const employee = await this.employeeRepository.findById(employeeId);
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found.');
+    }
+
+    const { fromDate, toDate } = this.parseDateRange(from, to);
+
+    const summary = await this.buildSummary(employee.id, fromDate, toDate);
+
+    return successResponse(
+      summary,
+      'Employee attendance summary retrieved successfully.',
+    );
+  }
+  private async buildSummary(employeeId: string, fromDate: Date, toDate: Date) {
+    const [assignments, attendances, approvedLeaves] = await Promise.all([
+      this.employeeShiftRepository.findForDateRange(
+        employeeId,
+        fromDate,
+        toDate,
+      ),
+
+      this.attendanceRepository.findByEmployeeAndDateRange(
+        employeeId,
+        fromDate,
+        toDate,
+      ),
+
+      this.leaveRepository.findApprovedForDateRange(
+        employeeId,
+        fromDate,
+        toDate,
+      ),
+    ]);
+
+    const dates = getDatesInRange(fromDate, toDate);
+
+    const summary = {
+      totalWorkDays: 0,
+      present: 0,
+      onTime: 0,
+      late: 0,
+      undertime: 0,
+      absent: 0,
+      onLeave: 0,
+      restDays: 0,
+      totalLateMinutes: 0,
+      totalUndertimeMinutes: 0,
+    };
+
+    const now = new Date();
+
+    for (const workDate of dates) {
+      const assignment = assignments.find(
+        (assignment) =>
+          assignment.effectiveFrom <= workDate &&
+          (assignment.effectiveTo === null ||
+            assignment.effectiveTo >= workDate),
+      );
+
+      if (!assignment) {
+        summary.restDays++;
+        continue;
+      }
+
+      const weekday = getWeekday(workDate);
+
+      if (!assignment.workDays.includes(weekday)) {
+        summary.restDays++;
+        continue;
+      }
+
+      summary.totalWorkDays++;
+
+      const approvedLeave = approvedLeaves.find(
+        (leave) => leave.startDate <= workDate && leave.endDate >= workDate,
+      );
+
+      if (approvedLeave) {
+        summary.onLeave++;
+        continue;
+      }
+
+      const attendance = attendances.find(
+        (attendance) => attendance.workDate.getTime() === workDate.getTime(),
+      );
+
+      if (!attendance) {
+        const expectedEnd = getShiftEndDateTime(
+          workDate,
+          assignment.shift.startTime,
+          assignment.shift.endTime,
+        );
+
+        if (now > expectedEnd) {
+          summary.absent++;
+        }
+
+        continue;
+      }
+
+      summary.present++;
+
+      summary.totalLateMinutes += attendance.lateMinutes;
+
+      summary.totalUndertimeMinutes += attendance.undertimeMinutes;
+
+      if (attendance.lateMinutes > 0) {
+        summary.late++;
+      }
+
+      if (attendance.undertimeMinutes > 0) {
+        summary.undertime++;
+      }
+
+      if (
+        attendance.lateMinutes === 0 &&
+        attendance.undertimeMinutes === 0 &&
+        attendance.checkOutAt
+      ) {
+        summary.onTime++;
+      }
+    }
+
+    return summary;
+  }
+  private parseDateRange(from: string, to: string) {
+    if (!from || !to) {
+      throw new BadRequestException('Both from and to dates are required.');
+    }
+
+    const fromDate = new Date(`${from}T00:00:00.000Z`);
+
+    const toDate = new Date(`${to}T00:00:00.000Z`);
+
+    if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) {
+      throw new BadRequestException('Invalid date format.');
+    }
+
+    if (fromDate > toDate) {
+      throw new BadRequestException('From date cannot be after to date.');
+    }
+
+    return {
+      fromDate,
+      toDate,
+    };
   }
 }

@@ -62,4 +62,34 @@ export class LeaveRepository {
       },
     });
   }
+  findApprovedForDate(employeeId: string, workDate: Date) {
+    return this.prisma.leaveRequest.findFirst({
+      where: {
+        employeeId,
+        status: 'approved',
+        startDate: {
+          lte: workDate,
+        },
+        endDate: {
+          gte: workDate,
+        },
+      },
+    });
+  }
+  findApprovedForDateRange(employeeId: string, from: Date, to: Date) {
+    return this.prisma.leaveRequest.findMany({
+      where: {
+        employeeId,
+        status: 'approved',
+
+        startDate: {
+          lte: to,
+        },
+
+        endDate: {
+          gte: from,
+        },
+      },
+    });
+  }
 }

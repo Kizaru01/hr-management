@@ -47,15 +47,15 @@ export class EmployeeRepository {
     });
   }
 
-  findByEmployeeId(employeeId: string) {
+  findByEmployeeNumber(employeeNumber: string) {
     return this.prisma.employee.findUnique({
-      where: { employeeId },
+      where: { employeeNumber },
     });
   }
 
   create(
     input: CreateEmployeeInput & {
-      employeeId: string;
+      employeeNumber: string;
     },
   ) {
     return this.prisma.employee.create({
@@ -97,7 +97,7 @@ export class EmployeeRepository {
       where: { id },
     });
   }
-  async generateEmployeeId() {
+  async generateEmployeeNumber() {
     const counter = await this.prisma.counter.upsert({
       where: {
         key: 'employeeId',
@@ -115,12 +115,12 @@ export class EmployeeRepository {
 
     return `EMP-${counter.value.toString().padStart(4, '0')}`;
   }
-  linkUser(employeeId: string, userId: string, tx?: Prisma.TransactionClient) {
+  linkUser(id: string, userId: string, tx?: Prisma.TransactionClient) {
     const client = tx ?? this.prisma;
 
     return client.employee.update({
       where: {
-        id: employeeId,
+        id,
       },
       data: {
         userId,

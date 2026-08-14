@@ -6,3 +6,4 @@ export * from "./auth/index.js";
 export * from "./user/index.js";
 export * from "./leave/index.js";
 export * from "./attendance/index.js";
+export * from "./shift/index.js";

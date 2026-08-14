@@ -10,6 +10,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { LeaveModule } from './leave/leave.module';
 import { AttendanceModule } from './attendance/attendance.module';
+import { ShiftModule } from './shift/shift.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AttendanceModule } from './attendance/attendance.module';
     AuthModule,
     LeaveModule,
     AttendanceModule,
+    ShiftModule,
   ],
   controllers: [AppController],
   providers: [AppService],
