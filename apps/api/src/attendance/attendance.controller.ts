@@ -30,6 +30,32 @@ export class AttendanceController {
     return this.attendanceService.findMine(user.id, from, to);
   }
 
+  @Get('daily')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'hr')
+  getCompanyDailyAttendance(@Query() query: AttendanceQueryDto) {
+    const date = query.date ?? getWorkDate().toISOString().slice(0, 10);
+
+    return this.attendanceService.getCompanyDailyAttendance(date);
+  }
+
+  @Get('summary')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'hr')
+  getCompanySummary(@Query() query: AttendanceQueryDto) {
+    const date = query.date ?? getWorkDate().toISOString().slice(0, 10);
+
+    return this.attendanceService.getCompanyDailySummary(date);
+  }
+  @Get('team')
+  getMyTeamDailyAttendance(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: AttendanceQueryDto,
+  ) {
+    const date = query.date ?? getWorkDate().toISOString().slice(0, 10);
+
+    return this.attendanceService.getMyTeamDailyAttendance(user.id, date);
+  }
   @Get('me/summary')
   @Roles('employee')
   getMySummary(

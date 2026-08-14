@@ -10,6 +10,20 @@ import { Prisma } from '../generated/prisma/client.js';
 export class EmployeeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  create(
+    input: CreateEmployeeInput & {
+      employeeNumber: string;
+    },
+  ) {
+    return this.prisma.employee.create({
+      data: input,
+      include: {
+        department: true,
+        position: true,
+        branch: true,
+      },
+    });
+  }
   findAll() {
     return this.prisma.employee.findMany({
       include: {
@@ -19,7 +33,25 @@ export class EmployeeRepository {
       },
     });
   }
+  findAllForAttendance() {
+    return this.prisma.employee.findMany({
+      where: {
+        employmentStatus: 'active',
+      },
 
+      select: {
+        id: true,
+        employeeNumber: true,
+        firstName: true,
+        middleName: true,
+        lastName: true,
+      },
+
+      orderBy: {
+        employeeNumber: 'asc',
+      },
+    });
+  }
   findById(id: string) {
     return this.prisma.employee.findUnique({
       where: { id },
@@ -38,6 +70,7 @@ export class EmployeeRepository {
         department: true,
         position: true,
         branch: true,
+        subordinates: true,
       },
     });
   }
@@ -46,28 +79,11 @@ export class EmployeeRepository {
       where: { email },
     });
   }
-
   findByEmployeeNumber(employeeNumber: string) {
     return this.prisma.employee.findUnique({
       where: { employeeNumber },
     });
   }
-
-  create(
-    input: CreateEmployeeInput & {
-      employeeNumber: string;
-    },
-  ) {
-    return this.prisma.employee.create({
-      data: input,
-      include: {
-        department: true,
-        position: true,
-        branch: true,
-      },
-    });
-  }
-
   update(id: string, input: UpdateEmployeeInput) {
     return this.prisma.employee.update({
       where: { id },
@@ -91,12 +107,12 @@ export class EmployeeRepository {
       },
     });
   }
-
   remove(id: string) {
     return this.prisma.employee.delete({
       where: { id },
     });
   }
+
   async generateEmployeeNumber() {
     const counter = await this.prisma.counter.upsert({
       where: {
@@ -124,6 +140,35 @@ export class EmployeeRepository {
       },
       data: {
         userId,
+      },
+    });
+  }
+
+  assignManager(employeeId: string, managerId: string) {
+    return this.prisma.employee.update({
+      where: {
+        id: employeeId,
+      },
+      data: {
+        manager: {
+          connect: {
+            id: managerId,
+          },
+        },
+      },
+      include: {
+        manager: true,
+      },
+    });
+  }
+  findByManagerId(managerId: string) {
+    return this.prisma.employee.findMany({
+      where: {
+        managerId,
+        employmentStatus: 'active',
+      },
+      orderBy: {
+        firstName: 'asc',
       },
     });
   }

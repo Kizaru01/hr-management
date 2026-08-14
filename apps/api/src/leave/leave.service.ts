@@ -36,7 +36,6 @@ export class LeaveService {
 
     return successResponse(leave, 'Leave request submitted successfully.');
   }
-
   async findMine(userId: string) {
     const employee = await this.employeeRepository.findByUserId(userId);
 
@@ -48,29 +47,34 @@ export class LeaveService {
 
     return successResponse(leaves, 'Leave requests retrieved successfully.');
   }
-
   async findAll() {
     const leaves = await this.leaveRepository.findAll();
 
     return successResponse(leaves, 'Leave requests retrieved successfully.');
   }
-  async approve(leaveRequestId: string, approverUserId: string) {
+  async approve(
+    leaveRequestId: string,
+    currentUserId: string,
+    currentUserRole: string,
+  ) {
     const leave = await this.leaveRepository.findById(leaveRequestId);
 
     if (!leave) {
       throw new NotFoundException('Leave request not found.');
     }
 
+    const approver = await this.employeeRepository.findByUserId(currentUserId);
+
+    if (!approver) {
+      throw new NotFoundException('Approver employee profile not found.');
+    }
+
+    this.validateLeaveApprover(leave, approver.id, currentUserRole);
+
     if (leave.status !== 'pending') {
       throw new BadRequestException(
         'Only pending leave requests can be approved.',
       );
-    }
-
-    const approver = await this.employeeRepository.findByUserId(approverUserId);
-
-    if (!approver) {
-      throw new NotFoundException('Approver employee profile not found.');
     }
 
     const approvedLeave = await this.leaveRepository.updatePending(
@@ -96,6 +100,7 @@ export class LeaveService {
   async reject(
     leaveRequestId: string,
     approverUserId: string,
+    currentUserRole: string,
     input: RejectLeaveInput,
   ) {
     const leave = await this.leaveRepository.findById(leaveRequestId);
@@ -103,17 +108,18 @@ export class LeaveService {
     if (!leave) {
       throw new NotFoundException('Leave request not found.');
     }
+    const approver = await this.employeeRepository.findByUserId(approverUserId);
+
+    if (!approver) {
+      throw new NotFoundException('Approver employee profile not found.');
+    }
+
+    this.validateLeaveApprover(leave, approver.id, currentUserRole);
 
     if (leave.status !== 'pending') {
       throw new BadRequestException(
         'Only pending leave requests can be rejected.',
       );
-    }
-
-    const approver = await this.employeeRepository.findByUserId(approverUserId);
-
-    if (!approver) {
-      throw new NotFoundException('Approver employee profile not found.');
     }
 
     const rejectedLeave = await this.leaveRepository.updatePending(
@@ -137,7 +143,6 @@ export class LeaveService {
       'Leave request rejected successfully.',
     );
   }
-
   async cancel(leaveRequestId: string, currentUserId: string) {
     const leave = await this.leaveRepository.findById(leaveRequestId);
 
@@ -180,5 +185,38 @@ export class LeaveService {
       cancelledLeave,
       'Leave request cancelled successfully.',
     );
+  }
+  async findMyTeamLeaveRequests(userId: string) {
+    const manager = await this.employeeRepository.findByUserId(userId);
+
+    if (!manager) {
+      throw new NotFoundException('Employee profile not found.');
+    }
+
+    const leaves = await this.leaveRepository.findByManagerId(manager.id);
+
+    return successResponse(
+      leaves,
+      'Team leave requests retrieved successfully.',
+    );
+  }
+  private validateLeaveApprover(
+    leave: {
+      employee: {
+        managerId: string | null;
+      };
+    },
+    approverEmployeeId: string,
+    currentUserRole: string,
+  ) {
+    if (currentUserRole === 'admin' || currentUserRole === 'hr') {
+      return;
+    }
+
+    if (leave.employee.managerId !== approverEmployeeId) {
+      throw new ForbiddenException(
+        'You are not authorized to manage this leave request.',
+      );
+    }
   }
 }

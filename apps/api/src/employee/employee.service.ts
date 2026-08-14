@@ -1,4 +1,5 @@
 import type {
+  AssignManagerInput,
   CreateEmployeeInput,
   UpdateEmployeeInput,
   UpdateMyProfileInput,
@@ -91,6 +92,17 @@ export class EmployeeService {
     }
 
     return successResponse(employee, 'Employee retrieved successfully.');
+  }
+  async findMyTeam(userId: string) {
+    const manager = await this.employeeRepository.findByUserId(userId);
+
+    if (!manager) {
+      throw new NotFoundException('Employee profile not found.');
+    }
+
+    const employees = await this.employeeRepository.findByManagerId(manager.id);
+
+    return successResponse(employees, 'Team retrieved successfully.');
   }
   async update(id: string, input: UpdateEmployeeInput) {
     const existingEmployee = await this.employeeRepository.findById(id);
@@ -204,6 +216,34 @@ export class EmployeeService {
 
       throw error;
     }
+  }
+  async assignManager(employeeId: string, input: AssignManagerInput) {
+    const employee = await this.employeeRepository.findById(employeeId);
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found.');
+    }
+
+    const manager = await this.employeeRepository.findById(input.managerId);
+
+    if (!manager) {
+      throw new NotFoundException('Manager not found.');
+    }
+
+    if (employee.id === manager.id) {
+      throw new BadRequestException('An employee cannot be their own manager.');
+    }
+
+    if (manager.employmentStatus !== 'active') {
+      throw new BadRequestException('Manager must be an active employee.');
+    }
+
+    const updatedEmployee = await this.employeeRepository.assignManager(
+      employee.id,
+      manager.id,
+    );
+
+    return successResponse(updatedEmployee, 'Manager assigned successfully.');
   }
   private async validateDepartmentBranchAndPosition(
     departmentId: string,

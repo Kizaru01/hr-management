@@ -22,7 +22,6 @@ export class EmployeeShiftRepository {
     return this.prisma.employeeShift.findFirst({
       where: {
         employeeId,
-
         AND: [
           {
             effectiveFrom: {
@@ -111,6 +110,28 @@ export class EmployeeShiftRepository {
       },
       orderBy: {
         effectiveFrom: 'desc',
+      },
+    });
+  }
+  findActiveAssignmentsForDate(workDate: Date) {
+    return this.prisma.employeeShift.findMany({
+      where: {
+        effectiveFrom: {
+          lte: workDate,
+        },
+        OR: [
+          {
+            effectiveTo: null,
+          },
+          {
+            effectiveTo: {
+              gte: workDate,
+            },
+          },
+        ],
+      },
+      include: {
+        shift: true,
       },
     });
   }

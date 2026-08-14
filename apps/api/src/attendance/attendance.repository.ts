@@ -42,18 +42,6 @@ export class AttendanceRepository {
       where: {
         workDate,
       },
-      include: {
-        employee: {
-          include: {
-            department: true,
-            position: true,
-            branch: true,
-          },
-        },
-      },
-      orderBy: {
-        checkInAt: 'asc',
-      },
     });
   }
   findByEmployeeAndDateRange(employeeId: string, from: Date, to: Date) {

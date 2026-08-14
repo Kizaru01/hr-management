@@ -18,6 +18,7 @@ import {
 } from './attendance-time';
 import { getAttendanceStatus, getWeekday } from './attendance-status';
 import { LeaveRepository } from '../leave/leave.repository';
+import { mapAttendanceEmployee } from './attendance.mapper';
 
 @Injectable()
 export class AttendanceService {
@@ -317,6 +318,255 @@ export class AttendanceService {
       summary,
       'Employee attendance summary retrieved successfully.',
     );
+  }
+  async getCompanyDailySummary(date: string) {
+    const workDate = new Date(`${date}T00:00:00.000Z`);
+
+    const [employees, assignments, approvedLeaves, attendances] =
+      await Promise.all([
+        this.employeeRepository.findAllForAttendance(),
+
+        this.employeeShiftRepository.findActiveAssignmentsForDate(workDate),
+
+        this.leaveRepository.findApprovedForDateAll(workDate),
+
+        this.attendanceRepository.findAllByWorkDate(workDate),
+      ]);
+
+    const summary = {
+      totalEmployees: employees.length,
+      present: 0,
+      onTime: 0,
+      late: 0,
+      undertime: 0,
+      absent: 0,
+      onLeave: 0,
+      restDays: 0,
+      scheduled: 0,
+    };
+
+    const weekday = getWeekday(workDate);
+    const now = new Date();
+
+    for (const employee of employees) {
+      const assignment = assignments.find(
+        (assignment) => assignment.employeeId === employee.id,
+      );
+
+      if (!assignment || !assignment.workDays.includes(weekday)) {
+        summary.restDays++;
+        continue;
+      }
+
+      const approvedLeave = approvedLeaves.find(
+        (leave) => leave.employeeId === employee.id,
+      );
+
+      if (approvedLeave) {
+        summary.onLeave++;
+        continue;
+      }
+
+      const attendance = attendances.find(
+        (attendance) => attendance.employeeId === employee.id,
+      );
+
+      if (attendance) {
+        summary.present++;
+
+        if (attendance.lateMinutes > 0) {
+          summary.late++;
+        }
+
+        if (attendance.undertimeMinutes > 0) {
+          summary.undertime++;
+        }
+
+        if (
+          attendance.lateMinutes === 0 &&
+          attendance.undertimeMinutes === 0 &&
+          attendance.checkOutAt
+        ) {
+          summary.onTime++;
+        }
+
+        continue;
+      }
+
+      const expectedEnd = getShiftEndDateTime(
+        workDate,
+        assignment.shift.startTime,
+        assignment.shift.endTime,
+      );
+
+      if (now > expectedEnd) {
+        summary.absent++;
+      } else {
+        summary.scheduled++;
+      }
+    }
+
+    return successResponse(
+      summary,
+      'Company attendance summary retrieved successfully.',
+    );
+  }
+  async getCompanyDailyAttendance(date: string) {
+    const workDate = new Date(`${date}T00:00:00.000Z`);
+
+    const [employees, assignments, approvedLeaves, attendances] =
+      await Promise.all([
+        this.employeeRepository.findAllForAttendance(),
+
+        this.employeeShiftRepository.findActiveAssignmentsForDate(workDate),
+
+        this.leaveRepository.findApprovedForDateAll(workDate),
+
+        this.attendanceRepository.findAllByWorkDate(workDate),
+      ]);
+
+    const weekday = getWeekday(workDate);
+    const now = new Date();
+
+    const data = employees.map((employee) => {
+      const assignment = assignments.find(
+        (assignment) => assignment.employeeId === employee.id,
+      );
+
+      const employeeData = mapAttendanceEmployee(employee);
+      if (!assignment || !assignment.workDays.includes(weekday)) {
+        return {
+          employee: employeeData,
+          workDate,
+          status: 'rest_day',
+        };
+      }
+
+      const approvedLeave = approvedLeaves.find(
+        (leave) => leave.employeeId === employee.id,
+      );
+
+      if (approvedLeave) {
+        return {
+          employee: employeeData,
+          workDate,
+          status: 'on_leave',
+          leave: approvedLeave,
+        };
+      }
+
+      const attendance = attendances.find(
+        (attendance) => attendance.employeeId === employee.id,
+      );
+
+      if (attendance) {
+        return {
+          employee: employeeData,
+          ...attendance,
+          status: getAttendanceStatus({
+            checkOutAt: attendance.checkOutAt,
+            lateMinutes: attendance.lateMinutes,
+            undertimeMinutes: attendance.undertimeMinutes,
+          }),
+        };
+      }
+
+      const expectedEnd = getShiftEndDateTime(
+        workDate,
+        assignment.shift.startTime,
+        assignment.shift.endTime,
+      );
+
+      return {
+        employee: employeeData,
+        workDate,
+        status: now > expectedEnd ? 'absent' : 'scheduled',
+      };
+    });
+
+    return successResponse(data, 'Daily attendance retrieved successfully.');
+  }
+  async getMyTeamDailyAttendance(userId: string, date: string) {
+    const manager = await this.employeeRepository.findByUserId(userId);
+
+    if (!manager) {
+      throw new NotFoundException('Employee profile not found.');
+    }
+
+    const workDate = new Date(`${date}T00:00:00.000Z`);
+
+    const [employees, assignments, approvedLeaves, attendances] =
+      await Promise.all([
+        this.employeeRepository.findByManagerId(manager.id),
+
+        this.employeeShiftRepository.findActiveAssignmentsForDate(workDate),
+
+        this.leaveRepository.findApprovedForDateAll(workDate),
+
+        this.attendanceRepository.findAllByWorkDate(workDate),
+      ]);
+
+    const weekday = getWeekday(workDate);
+    const now = new Date();
+
+    const data = employees.map((employee) => {
+      const employeeData = mapAttendanceEmployee(employee);
+
+      const assignment = assignments.find(
+        (assignment) => assignment.employeeId === employee.id,
+      );
+
+      if (!assignment || !assignment.workDays.includes(weekday)) {
+        return {
+          employee: employeeData,
+          workDate,
+          status: 'rest_day',
+        };
+      }
+
+      const approvedLeave = approvedLeaves.find(
+        (leave) => leave.employeeId === employee.id,
+      );
+
+      if (approvedLeave) {
+        return {
+          employee: employeeData,
+          workDate,
+          status: 'on_leave',
+        };
+      }
+
+      const attendance = attendances.find(
+        (attendance) => attendance.employeeId === employee.id,
+      );
+
+      if (attendance) {
+        return {
+          employee: employeeData,
+          ...attendance,
+
+          status: getAttendanceStatus({
+            checkOutAt: attendance.checkOutAt,
+            lateMinutes: attendance.lateMinutes,
+            undertimeMinutes: attendance.undertimeMinutes,
+          }),
+        };
+      }
+
+      const expectedEnd = getShiftEndDateTime(
+        workDate,
+        assignment.shift.startTime,
+        assignment.shift.endTime,
+      );
+
+      return {
+        employee: employeeData,
+        workDate,
+        status: now > expectedEnd ? 'absent' : 'scheduled',
+      };
+    });
+
+    return successResponse(data, 'Team attendance retrieved successfully.');
   }
   private async buildSummary(employeeId: string, fromDate: Date, toDate: Date) {
     const [assignments, attendances, approvedLeaves] = await Promise.all([

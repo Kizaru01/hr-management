@@ -17,11 +17,11 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RejectLeaveDto } from './dto/reject-leave.dto.js';
 
 @Controller('leave')
+@UseGuards(JwtAuthGuard)
 export class LeaveController {
   constructor(private readonly leaveService: LeaveService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
   create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() input: CreateLeaveDto,
@@ -29,35 +29,31 @@ export class LeaveController {
     return this.leaveService.create(user.id, input);
   }
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles('admin', 'hr')
   findAll() {
     return this.leaveService.findAll();
   }
   @Get('me')
-  @UseGuards(JwtAuthGuard)
   findMine(@CurrentUser() user: AuthenticatedUser) {
     return this.leaveService.findMine(user.id);
   }
-
-  @Patch(':id/approve')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'hr')
-  approve(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
-    return this.leaveService.approve(id, user.id);
+  @Get('team')
+  findMyTeamLeaveRequests(@CurrentUser() user: AuthenticatedUser) {
+    return this.leaveService.findMyTeamLeaveRequests(user.id);
   }
-
+  @Patch(':id/approve')
+  approve(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.leaveService.approve(id, user.id, user.role);
+  }
   @Patch(':id/reject')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'hr')
   reject(
-    @Param('id') leaveRequestId: string,
+    @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,
     @Body() input: RejectLeaveDto,
   ) {
-    return this.leaveService.reject(leaveRequestId, user.id, input);
+    return this.leaveService.reject(id, user.id, user.role, input);
   }
-
   @Patch(':id/cancel')
   @UseGuards(JwtAuthGuard)
   cancel(
