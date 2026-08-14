@@ -5,8 +5,8 @@ node_modules/
 .env
 .env.*
 !.env.example
-ENDPOINT.MD
-SETUP.MD
+ENDPOINT.md
+SETUP.md
 # Next.js
 .next/
 out/
