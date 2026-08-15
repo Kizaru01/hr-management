@@ -3,11 +3,7 @@ import { z } from "zod";
 export const createEmployeeDocumentSchema = z
   .object({
     title: z.string().trim().min(2, "Document title is required.").max(150),
-
     type: z.string().trim().min(2, "Document type is required.").max(50),
-
-    fileUrl: z.url("Invalid file URL."),
-
     issuedAt: z.coerce.date().optional(),
     expiresAt: z.coerce.date().optional(),
   })

@@ -31,4 +31,10 @@ export class EmployeeDocumentRepository {
       },
     });
   }
+  update(id: string, data: Prisma.EmployeeDocumentUpdateInput) {
+    return this.prisma.employeeDocument.update({
+      where: { id },
+      data,
+    });
+  }
 }
