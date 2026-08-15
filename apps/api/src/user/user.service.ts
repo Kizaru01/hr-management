@@ -29,11 +29,13 @@ export class UserService {
       throw new ConflictException('A user with this email already exists.');
     }
 
-    if (input.role === 'employee') {
-      if (!input.employeeNumber) {
-        throw new BadRequestException('Employee is required.');
-      }
+    if (input.role === 'employee' && !input.employeeNumber) {
+      throw new BadRequestException('Employee is required.');
+    }
 
+    let employeeId: string | undefined;
+
+    if (input.employeeNumber) {
       const employee = await this.employeeRepository.findByEmployeeNumber(
         input.employeeNumber,
       );
@@ -42,8 +44,17 @@ export class UserService {
         throw new NotFoundException('Employee not found.');
       }
 
-      if (employee.userId) {
-        throw new ConflictException('Employee already has an account.');
+      employeeId = employee.id;
+
+      if (input.role === 'employee') {
+        if (employee.userId) {
+          throw new ConflictException('Employee already has an account.');
+        }
+        if (employee.email.trim().toLowerCase() !== normalizedEmail) {
+          throw new BadRequestException(
+            'Email does not match the employee record.',
+          );
+        }
       }
     }
 
@@ -60,15 +71,8 @@ export class UserService {
         tx,
       );
 
-      if (input.employeeNumber) {
-        const employee = await this.employeeRepository.findByEmployeeNumber(
-          input.employeeNumber,
-        );
-        if (!employee) {
-          throw new NotFoundException('Employee not found.');
-        }
-
-        await this.employeeRepository.linkUser(employee.id, createdUser.id, tx);
+      if (employeeId) {
+        await this.employeeRepository.linkUser(employeeId, createdUser.id, tx);
       }
 
       return createdUser;

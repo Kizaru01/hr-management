@@ -11,6 +11,9 @@ import { AuthModule } from './auth/auth.module';
 import { LeaveModule } from './leave/leave.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { ShiftModule } from './shift/shift.module';
+import { HolidayModule } from './holliday/holliday.module';
+import { AnnouncementsModule } from './announcements/announcements.module';
+import { EmployeeDocumentsModule } from './employee-documents/employee-documents.module';
 
 @Module({
   imports: [
@@ -24,6 +27,9 @@ import { ShiftModule } from './shift/shift.module';
     LeaveModule,
     AttendanceModule,
     ShiftModule,
+    HolidayModule,
+    AnnouncementsModule,
+    EmployeeDocumentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
