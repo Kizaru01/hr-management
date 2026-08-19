@@ -9,9 +9,6 @@ export class LeaveRepository {
   create(data: Prisma.LeaveRequestCreateInput) {
     return this.prisma.leaveRequest.create({
       data,
-      include: {
-        employee: true,
-      },
     });
   }
   findByEmployeeId(employeeId: string) {
@@ -31,9 +28,6 @@ export class LeaveRepository {
     const [leave] = await this.prisma.leaveRequest.updateManyAndReturn({
       where: { id, status: 'pending' },
       data,
-      include: {
-        employee: true,
-      },
     });
 
     return leave ?? null;
@@ -42,7 +36,13 @@ export class LeaveRepository {
     return this.prisma.leaveRequest.findUnique({
       where: { id },
       include: {
-        employee: true,
+        employee: {
+          select: {
+            id: true,
+            userId: true,
+            managerId: true,
+          },
+        },
       },
     });
   }
@@ -114,6 +114,21 @@ export class LeaveRepository {
       },
       orderBy: {
         createdAt: 'desc',
+      },
+    });
+  }
+  countApprovedForDate(workDate: Date) {
+    return this.prisma.leaveRequest.count({
+      where: {
+        status: 'approved',
+
+        startDate: {
+          lte: workDate,
+        },
+
+        endDate: {
+          gte: workDate,
+        },
       },
     });
   }

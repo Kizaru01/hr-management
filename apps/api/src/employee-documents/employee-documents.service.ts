@@ -8,12 +8,14 @@ import { EmployeeRepository } from '../employee/employee.repository';
 import { CreateEmployeeDocumentInput } from '@hr-management/validation';
 import { successResponse } from '../common/responses/success-response';
 import { EmployeeDocumentRepository } from './employee-document.repository';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class EmployeeDocumentService {
   constructor(
     private readonly employeeRepository: EmployeeRepository,
     private readonly employeeDocumentRepository: EmployeeDocumentRepository,
+    private readonly notificationService: NotificationService,
   ) {}
   async create(
     employeeId: string,
@@ -24,6 +26,14 @@ export class EmployeeDocumentService {
     if (!file) {
       throw new BadRequestException('Document file is required.');
     }
+    const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Only PDF, JPEG, and PNG files are allowed.',
+      );
+    }
+
     const fileUrl = `uploads/employee-documents/${file.filename}`;
     const employee = await this.employeeRepository.findById(employeeId);
 
@@ -51,6 +61,16 @@ export class EmployeeDocumentService {
       },
     });
 
+    if (employee.userId) {
+      await this.notificationService.create({
+        userId: employee.userId,
+        title: 'New employee document',
+        message: `${document.title} has been added to your employee documents.`,
+        type: 'document',
+        resourceType: 'employee_document',
+        resourceId: document.id,
+      });
+    }
     return successResponse(document, 'Employee document created successfully.');
   }
   async findByEmployeeId(employeeId: string) {

@@ -88,10 +88,6 @@ export class EmployeeRepository {
     return this.prisma.employee.update({
       where: { id },
       data: input,
-      include: {
-        department: true,
-        position: true,
-      },
     });
   }
   updateByUserId(userId: string, input: UpdateMyProfileInput) {
@@ -100,10 +96,15 @@ export class EmployeeRepository {
         userId,
       },
       data: input,
-      include: {
-        department: true,
-        position: true,
-        branch: true,
+    });
+  }
+  updateByEmployeeIdAvatar(id: string, avatar: string | null) {
+    return this.prisma.employee.update({
+      where: {
+        id,
+      },
+      data: {
+        avatar,
       },
     });
   }
@@ -169,6 +170,40 @@ export class EmployeeRepository {
       },
       orderBy: {
         firstName: 'asc',
+      },
+    });
+  }
+  findNotificationRecipients(
+    audience: string,
+    departmentId?: string,
+    branchId?: string,
+  ) {
+    return this.prisma.employee.findMany({
+      where: {
+        employmentStatus: 'active',
+        userId: {
+          not: null,
+        },
+        ...(audience === 'department' && {
+          departmentId,
+        }),
+
+        ...(audience === 'branch' && {
+          branchId,
+        }),
+      },
+      select: {
+        userId: true,
+      },
+    });
+  }
+  countAll() {
+    return this.prisma.employee.count();
+  }
+  countByEmploymentStatus(employmentStatus: string) {
+    return this.prisma.employee.count({
+      where: {
+        employmentStatus,
       },
     });
   }

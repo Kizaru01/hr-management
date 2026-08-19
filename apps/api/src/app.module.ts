@@ -14,6 +14,11 @@ import { ShiftModule } from './shift/shift.module';
 import { HolidayModule } from './holliday/holliday.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { EmployeeDocumentsModule } from './employee-documents/employee-documents.module';
+import { PerformanceReviewController } from './performance-review/performance-review.controller';
+import { PerformanceReviewService } from './performance-review/performance-review.service';
+import { PerformanceReviewModule } from './performance-review/performance-review.module';
+import { NotificationModule } from './notification/notification.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -30,8 +35,11 @@ import { EmployeeDocumentsModule } from './employee-documents/employee-documents
     HolidayModule,
     AnnouncementsModule,
     EmployeeDocumentsModule,
+    PerformanceReviewModule,
+    NotificationModule,
+    DashboardModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, PerformanceReviewController],
+  providers: [AppService, PerformanceReviewService],
 })
 export class AppModule {}

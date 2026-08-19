@@ -58,4 +58,38 @@ export class AttendanceRepository {
       },
     });
   }
+  getDailyStats(workDate: Date) {
+    return this.prisma.attendance.aggregate({
+      where: {
+        workDate,
+      },
+      _count: {
+        id: true,
+      },
+      _sum: {
+        lateMinutes: true,
+        undertimeMinutes: true,
+      },
+    });
+  }
+  countLateByDate(workDate: Date) {
+    return this.prisma.attendance.count({
+      where: {
+        workDate,
+        lateMinutes: {
+          gt: 0,
+        },
+      },
+    });
+  }
+  countUndertimeByDate(workDate: Date) {
+    return this.prisma.attendance.count({
+      where: {
+        workDate,
+        undertimeMinutes: {
+          gt: 0,
+        },
+      },
+    });
+  }
 }

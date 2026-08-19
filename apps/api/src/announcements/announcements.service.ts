@@ -9,6 +9,7 @@ import { successResponse } from '../common/responses/success-response';
 import { DepartmentRepository } from '../department/department.repository';
 import { BranchRepository } from '../branch/branch.respository';
 import { EmployeeRepository } from '../employee/employee.repository';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class AnnouncementsService {
@@ -17,6 +18,7 @@ export class AnnouncementsService {
     private readonly departmentRepository: DepartmentRepository,
     private readonly branchRepository: BranchRepository,
     private readonly employeeRepository: EmployeeRepository,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(currentUserId: string, input: CreateAnnouncementInput) {
@@ -86,6 +88,26 @@ export class AnnouncementsService {
         },
       }),
     });
+    const recipients = await this.employeeRepository.findNotificationRecipients(
+      input.audience,
+      input.departmentId,
+      input.branchId,
+    );
+    const notifications = recipients
+      .filter(
+        (recipient): recipient is { userId: string } =>
+          recipient.userId !== null,
+      )
+      .map((recipient) => ({
+        userId: recipient.userId,
+        title: 'New announcement',
+        message: announcement.title,
+        type: 'announcement' as const,
+        resourceType: 'announcement',
+        resourceId: announcement.id,
+      }));
+
+    await this.notificationService.createMany(notifications);
 
     return successResponse(announcement, 'Announcement created successfully.');
   }

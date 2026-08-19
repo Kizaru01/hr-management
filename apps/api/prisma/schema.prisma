@@ -59,6 +59,14 @@ enum Weekday {
   sunday
 }
 
+enum NotificationType {
+  leave
+  document
+  announcement
+  performance_review
+  system
+}
+
 model User {
   id           String     @id @default(cuid())
   email        String     @unique
@@ -66,8 +74,10 @@ model User {
   role         UserRole   @default(employee)
   status       UserStatus @default(pending)
 
-  uploadedDocuments EmployeeDocument[]
-  announcements     Announcement[]
+  notifications           Notification[]
+  performanceReviewsGiven PerformanceReview[]
+  uploadedDocuments       EmployeeDocument[]
+  announcements           Announcement[]
 
   activationTokenHash String?
   activationExpiresAt DateTime?
@@ -92,6 +102,13 @@ model Employee {
   phoneNumber String?
   avatar      String?
 
+  birthDate DateTime? @db.Date
+  gender    String?
+
+  address               String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+
   hireDate         DateTime
   employmentType   String
   employmentStatus String   @default("active")
@@ -112,10 +129,11 @@ model Employee {
   manager      Employee?  @relation("EmployeeManager", fields: [managerId], references: [id])
   subordinates Employee[] @relation("EmployeeManager")
 
-  documents        EmployeeDocument[]
-  leaveRequests    LeaveRequest[]
-  attendances      Attendance[]
-  shiftAssignments EmployeeShift[]
+  performanceReviews PerformanceReview[]
+  documents          EmployeeDocument[]
+  leaveRequests      LeaveRequest[]
+  attendances        Attendance[]
+  shiftAssignments   EmployeeShift[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -333,4 +351,52 @@ model EmployeeDocument {
   @@index([employeeId])
   @@index([type])
   @@index([expiresAt])
+}
+
+model PerformanceReview {
+  id String @id @default(cuid())
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+
+  reviewerId String
+  reviewer   User   @relation(fields: [reviewerId], references: [id])
+
+  reviewDate DateTime @db.Date
+  rating     Int
+
+  strengths    String?
+  improvements String?
+  comments     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([reviewerId])
+  @@index([reviewDate])
+}
+
+model Notification {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  title   String
+  message String
+
+  type NotificationType
+
+  resourceId   String?
+  resourceType String?
+
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, isRead])
+  @@index([createdAt])
 }

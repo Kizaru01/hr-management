@@ -8,12 +8,14 @@ import { EmployeeRepository } from '../employee/employee.repository';
 import { CreateLeaveInput, RejectLeaveInput } from '@hr-management/validation';
 import { successResponse } from '../common/responses/success-response';
 import { LeaveRepository } from './leave.repository';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class LeaveService {
   constructor(
     private readonly employeeRepository: EmployeeRepository,
     private readonly leaveRepository: LeaveRepository,
+    private readonly notificationService: NotificationService,
   ) {}
   async create(userId: string, input: CreateLeaveInput) {
     const employee = await this.employeeRepository.findByUserId(userId);
@@ -92,6 +94,21 @@ export class LeaveService {
       );
     }
 
+    if (leave.employee.userId) {
+      await this.notificationService.create({
+        userId: leave.employee.userId,
+
+        title: 'Leave request approved',
+
+        message: 'Your leave request has been approved.',
+
+        type: 'leave',
+
+        resourceType: 'leave_request',
+        resourceId: leave.id,
+      });
+    }
+
     return successResponse(
       approvedLeave,
       'Leave request approved successfully.',
@@ -138,6 +155,21 @@ export class LeaveService {
       );
     }
 
+    if (leave.employee.userId) {
+      await this.notificationService.create({
+        userId: leave.employee.userId,
+
+        title: 'Leave request rejected',
+
+        message: 'Your leave request has been rejected.',
+
+        type: 'leave',
+
+        resourceType: 'leave_request',
+        resourceId: leave.id,
+      });
+    }
+
     return successResponse(
       rejectedLeave,
       'Leave request rejected successfully.',
@@ -179,6 +211,21 @@ export class LeaveService {
       throw new BadRequestException(
         'Only pending leave requests can be cancelled.',
       );
+    }
+
+    if (leave.employee.userId) {
+      await this.notificationService.create({
+        userId: leave.employee.userId,
+
+        title: 'Leave request cancelled',
+
+        message: 'Your leave request has been cancelled.',
+
+        type: 'leave',
+
+        resourceType: 'leave_request',
+        resourceId: leave.id,
+      });
     }
 
     return successResponse(

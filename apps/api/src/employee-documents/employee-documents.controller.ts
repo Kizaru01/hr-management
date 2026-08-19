@@ -1,10 +1,7 @@
 import {
   Body,
   Controller,
-  FileTypeValidator,
-  MaxFileSizeValidator,
   Param,
-  ParseFilePipe,
   Post,
   Get,
   Res,
@@ -54,19 +51,7 @@ export class EmployeeDocumentsController {
   createDocument(
     @Param('employeeId') employeeId: string,
     @CurrentUser() user: AuthenticatedUser,
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({
-            maxSize: 10 * 1024 * 1024,
-          }),
-
-          new FileTypeValidator({
-            fileType: /(pdf|jpeg|jpg|png)$/,
-          }),
-        ],
-      }),
-    )
+    @UploadedFile()
     file: Express.Multer.File,
     @Body() input: CreateEmployeeDocumentDto,
   ) {

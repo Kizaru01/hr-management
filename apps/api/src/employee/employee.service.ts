@@ -16,6 +16,8 @@ import { Prisma } from '../generated/prisma/client.js';
 import { PositionRepository } from '../position/position.repository.js';
 import { EmployeeRepository } from './employee.repository.js';
 import { BranchRepository } from '../branch/branch.respository.js';
+import { unlink } from 'node:fs/promises';
+import { join } from 'node:path';
 
 @Injectable()
 export class EmployeeService {
@@ -185,15 +187,69 @@ export class EmployeeService {
     const employee = await this.employeeRepository.findByUserId(userId);
 
     if (!employee) {
-      throw new NotFoundException('Employee not found.');
+      throw new NotFoundException('Employee profile not found.');
     }
 
     const updatedEmployee = await this.employeeRepository.updateByUserId(
-      userId,
-      input,
+      employee.id,
+      {
+        ...(input.phoneNumber !== undefined && {
+          phoneNumber: input.phoneNumber,
+        }),
+
+        ...(input.birthDate !== undefined && {
+          birthDate: input.birthDate,
+        }),
+
+        ...(input.gender !== undefined && {
+          gender: input.gender,
+        }),
+
+        ...(input.address !== undefined && {
+          address: input.address,
+        }),
+
+        ...(input.emergencyContactName !== undefined && {
+          emergencyContactName: input.emergencyContactName,
+        }),
+
+        ...(input.emergencyContactPhone !== undefined && {
+          emergencyContactPhone: input.emergencyContactPhone,
+        }),
+      },
     );
 
     return successResponse(updatedEmployee, 'Profile updated successfully.');
+  }
+  async updateMyAvatar(userId: string, file: Express.Multer.File) {
+    const employee = await this.employeeRepository.findByUserId(userId);
+
+    if (!employee) {
+      throw new NotFoundException('Employee profile not found.');
+    }
+
+    const previousAvatar = employee.avatar;
+
+    const avatar = `uploads/avatars/${file.filename}`;
+
+    const updatedEmployee =
+      await this.employeeRepository.updateByEmployeeIdAvatar(
+        employee.id,
+        avatar,
+      );
+
+    if (previousAvatar) {
+      const previousAvatarPath = join(process.cwd(), previousAvatar);
+
+      try {
+        await unlink(previousAvatarPath);
+      } catch {
+        // We don't fail the request because
+        // the database update already succeeded.
+      }
+    }
+
+    return successResponse(updatedEmployee, 'Avatar updated successfully.');
   }
   async remove(id: string) {
     const existingEmployee = await this.employeeRepository.findById(id);
@@ -216,6 +272,31 @@ export class EmployeeService {
 
       throw error;
     }
+  }
+  async removeMyAvatar(userId: string) {
+    const employee = await this.employeeRepository.findByUserId(userId);
+
+    if (!employee) {
+      throw new NotFoundException('Employee profile not found.');
+    }
+
+    if (!employee.avatar) {
+      throw new BadRequestException('Employee does not have an avatar.');
+    }
+
+    const previousAvatar = employee.avatar;
+
+    const updatedEmployee =
+      await this.employeeRepository.updateByEmployeeIdAvatar(employee.id, null);
+
+    try {
+      await unlink(join(process.cwd(), previousAvatar));
+    } catch {
+      // Database is already correct.
+      // Storage cleanup can be handled separately.
+    }
+
+    return successResponse(updatedEmployee, 'Avatar removed successfully.');
   }
   async assignManager(employeeId: string, input: AssignManagerInput) {
     const employee = await this.employeeRepository.findById(employeeId);
