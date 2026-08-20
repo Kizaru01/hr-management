@@ -19,6 +19,7 @@ import {
 import { getAttendanceStatus, getWeekday } from './attendance-status';
 import { LeaveRepository } from '../leave/leave.repository';
 import { mapAttendanceEmployee } from './attendance.mapper';
+import { HolidayRepository } from '../holliday/holliday.repository';
 
 @Injectable()
 export class AttendanceService {
@@ -27,6 +28,7 @@ export class AttendanceService {
     private readonly attendanceRepository: AttendanceRepository,
     private readonly employeeShiftRepository: EmployeeShiftRepository,
     private readonly leaveRepository: LeaveRepository,
+    private readonly holidayRepository: HolidayRepository,
   ) {}
 
   async checkIn(userId: string) {
@@ -90,7 +92,6 @@ export class AttendanceService {
       throw error;
     }
   }
-
   async checkOut(userId: string) {
     const employee = await this.employeeRepository.findByUserId(userId);
 
@@ -147,7 +148,6 @@ export class AttendanceService {
 
     return successResponse(updatedAttendance, 'Checked out successfully.');
   }
-
   async findMine(userId: string, from?: string, to?: string) {
     const employee = await this.employeeRepository.findByUserId(userId);
 
@@ -181,7 +181,6 @@ export class AttendanceService {
 
     return successResponse(data, 'Attendance records retrieved successfully.');
   }
-
   async findAll(input: AttendanceQueryInput) {
     const workDate = input.date
       ? new Date(`${input.date}T00:00:00.000Z`)
@@ -206,6 +205,19 @@ export class AttendanceService {
 
     if (!employee) {
       throw new NotFoundException('Employee profile not found.');
+    }
+
+    const holiday = await this.holidayRepository.findByDate(workDate);
+
+    if (holiday?.isActive) {
+      return successResponse(
+        {
+          workDate,
+          status: 'holiday',
+          name: holiday.name,
+        },
+        'Daily attendance status retrieved successfully.',
+      );
     }
 
     const assignment = await this.employeeShiftRepository.findActiveAssignment(
@@ -322,8 +334,10 @@ export class AttendanceService {
   async getCompanyDailySummary(date: string) {
     const workDate = new Date(`${date}T00:00:00.000Z`);
 
-    const [employees, assignments, approvedLeaves, attendances] =
+    const [holiday, employees, assignments, approvedLeaves, attendances] =
       await Promise.all([
+        this.holidayRepository.findByDate(workDate),
+
         this.employeeRepository.findAllForAttendance(),
 
         this.employeeShiftRepository.findActiveAssignmentsForDate(workDate),
@@ -344,6 +358,19 @@ export class AttendanceService {
       restDays: 0,
       scheduled: 0,
     };
+
+    if (holiday?.isActive) {
+      return successResponse(
+        {
+          ...summary,
+          holiday: {
+            id: holiday.id,
+            name: holiday.name,
+          },
+        },
+        'Company attendance summary retrieved successfully.',
+      );
+    }
 
     const weekday = getWeekday(workDate);
     const now = new Date();
@@ -414,6 +441,7 @@ export class AttendanceService {
   async getCompanyDailyAttendance(date: string) {
     const workDate = new Date(`${date}T00:00:00.000Z`);
 
+    const holiday = await this.holidayRepository.findByDate(workDate);
     const [employees, assignments, approvedLeaves, attendances] =
       await Promise.all([
         this.employeeRepository.findAllForAttendance(),
@@ -434,6 +462,19 @@ export class AttendanceService {
       );
 
       const employeeData = mapAttendanceEmployee(employee);
+
+      if (holiday?.isActive) {
+        return {
+          employee: employeeData,
+          workDate,
+          status: 'holiday',
+          holiday: {
+            id: holiday.id,
+            name: holiday.name,
+          },
+        };
+      }
+
       if (!assignment || !assignment.workDays.includes(weekday)) {
         return {
           employee: employeeData,
@@ -495,6 +536,8 @@ export class AttendanceService {
 
     const workDate = new Date(`${date}T00:00:00.000Z`);
 
+    const holiday = await this.holidayRepository.findByDate(workDate);
+
     const [employees, assignments, approvedLeaves, attendances] =
       await Promise.all([
         this.employeeRepository.findByManagerId(manager.id),
@@ -511,6 +554,18 @@ export class AttendanceService {
 
     const data = employees.map((employee) => {
       const employeeData = mapAttendanceEmployee(employee);
+
+      if (holiday?.isActive) {
+        return {
+          employee: employeeData,
+          workDate,
+          status: 'holiday',
+          holiday: {
+            id: holiday.id,
+            name: holiday.name,
+          },
+        };
+      }
 
       const assignment = assignments.find(
         (assignment) => assignment.employeeId === employee.id,
@@ -569,25 +624,27 @@ export class AttendanceService {
     return successResponse(data, 'Team attendance retrieved successfully.');
   }
   private async buildSummary(employeeId: string, fromDate: Date, toDate: Date) {
-    const [assignments, attendances, approvedLeaves] = await Promise.all([
-      this.employeeShiftRepository.findForDateRange(
-        employeeId,
-        fromDate,
-        toDate,
-      ),
+    const [assignments, attendances, approvedLeaves, holidays] =
+      await Promise.all([
+        this.employeeShiftRepository.findForDateRange(
+          employeeId,
+          fromDate,
+          toDate,
+        ),
 
-      this.attendanceRepository.findByEmployeeAndDateRange(
-        employeeId,
-        fromDate,
-        toDate,
-      ),
+        this.attendanceRepository.findByEmployeeAndDateRange(
+          employeeId,
+          fromDate,
+          toDate,
+        ),
 
-      this.leaveRepository.findApprovedForDateRange(
-        employeeId,
-        fromDate,
-        toDate,
-      ),
-    ]);
+        this.leaveRepository.findApprovedForDateRange(
+          employeeId,
+          fromDate,
+          toDate,
+        ),
+        this.holidayRepository.findForDateRange(fromDate, toDate),
+      ]);
 
     const dates = getDatesInRange(fromDate, toDate);
 
@@ -599,6 +656,7 @@ export class AttendanceService {
       undertime: 0,
       absent: 0,
       onLeave: 0,
+      holidays: 0,
       restDays: 0,
       totalLateMinutes: 0,
       totalUndertimeMinutes: 0,
@@ -607,6 +665,15 @@ export class AttendanceService {
     const now = new Date();
 
     for (const workDate of dates) {
+      const holiday = holidays.find(
+        (holiday) => holiday.date.getTime() === workDate.getTime(),
+      );
+
+      if (holiday) {
+        summary.holidays++;
+        continue;
+      }
+
       const assignment = assignments.find(
         (assignment) =>
           assignment.effectiveFrom <= workDate &&
