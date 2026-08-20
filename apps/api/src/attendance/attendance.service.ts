@@ -334,8 +334,10 @@ export class AttendanceService {
   async getCompanyDailySummary(date: string) {
     const workDate = new Date(`${date}T00:00:00.000Z`);
 
-    const [employees, assignments, approvedLeaves, attendances] =
+    const [holiday, employees, assignments, approvedLeaves, attendances] =
       await Promise.all([
+        this.holidayRepository.findByDate(workDate),
+
         this.employeeRepository.findAllForAttendance(),
 
         this.employeeShiftRepository.findActiveAssignmentsForDate(workDate),
@@ -356,6 +358,19 @@ export class AttendanceService {
       restDays: 0,
       scheduled: 0,
     };
+
+    if (holiday?.isActive) {
+      return successResponse(
+        {
+          ...summary,
+          holiday: {
+            id: holiday.id,
+            name: holiday.name,
+          },
+        },
+        'Company attendance summary retrieved successfully.',
+      );
+    }
 
     const weekday = getWeekday(workDate);
     const now = new Date();
@@ -449,17 +464,15 @@ export class AttendanceService {
       const employeeData = mapAttendanceEmployee(employee);
 
       if (holiday?.isActive) {
-        return successResponse(
-          {
-            workDate,
-            status: 'holiday',
-            holiday: {
-              id: holiday.id,
-              name: holiday.name,
-            },
+        return {
+          employee: employeeData,
+          workDate,
+          status: 'holiday',
+          holiday: {
+            id: holiday.id,
+            name: holiday.name,
           },
-          'Daily attendance status retrieved successfully.',
-        );
+        };
       }
 
       if (!assignment || !assignment.workDays.includes(weekday)) {
@@ -543,14 +556,15 @@ export class AttendanceService {
       const employeeData = mapAttendanceEmployee(employee);
 
       if (holiday?.isActive) {
-        return successResponse(
-          {
-            workDate,
-            status: 'holiday',
+        return {
+          employee: employeeData,
+          workDate,
+          status: 'holiday',
+          holiday: {
+            id: holiday.id,
             name: holiday.name,
           },
-          'Daily attendance status retrieved successfully.',
-        );
+        };
       }
 
       const assignment = assignments.find(

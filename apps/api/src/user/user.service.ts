@@ -10,6 +10,7 @@ import { EmployeeRepository } from '../employee/employee.repository.js';
 import { UserRepository } from './user.repository.js';
 import { PrismaService } from '../prisma/prisma.service';
 import { ActivationTokenService } from '../common/security/activation-token.service.js';
+import { Prisma } from '../generated/prisma/client.js';
 
 @Injectable()
 export class UserService {
@@ -60,23 +61,46 @@ export class UserService {
 
     const activation = this.activationTokenService.generate();
 
-    const user = await this.prisma.$transaction(async (tx) => {
-      const createdUser = await this.userRepository.create(
-        {
-          email: normalizedEmail,
-          role: input.role,
-          activationTokenHash: activation.tokenHash,
-          activationExpiresAt: activation.expiresAt,
-        },
-        tx,
-      );
+    const user = await this.prisma
+      .$transaction(async (tx) => {
+        const createdUser = await this.userRepository.create(
+          {
+            email: normalizedEmail,
+            role: input.role,
+            activationTokenHash: activation.tokenHash,
+            activationExpiresAt: activation.expiresAt,
+          },
+          tx,
+        );
 
-      if (employeeId) {
-        await this.employeeRepository.linkUser(employeeId, createdUser.id, tx);
-      }
+        if (employeeId) {
+          const result = await this.employeeRepository.linkUserIfUnlinked(
+            employeeId,
+            createdUser.id,
+            tx,
+          );
 
-      return createdUser;
-    });
+          if (result.count !== 1) {
+            throw new ConflictException('Employee already has an account.');
+          }
+        }
+
+        return createdUser;
+      })
+      .catch((error: unknown) => {
+        if (error instanceof ConflictException) {
+          throw error;
+        }
+
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          throw new ConflictException('A user with this email already exists.');
+        }
+
+        throw error;
+      });
 
     return successResponse(
       {

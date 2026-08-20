@@ -132,12 +132,17 @@ export class EmployeeRepository {
 
     return `EMP-${counter.value.toString().padStart(4, '0')}`;
   }
-  linkUser(id: string, userId: string, tx?: Prisma.TransactionClient) {
+  linkUserIfUnlinked(
+    id: string,
+    userId: string,
+    tx?: Prisma.TransactionClient,
+  ) {
     const client = tx ?? this.prisma;
 
-    return client.employee.update({
+    return client.employee.updateMany({
       where: {
         id,
+        userId: null,
       },
       data: {
         userId,

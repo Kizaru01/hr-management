@@ -10,6 +10,7 @@ import {
   UpdateHolidayInput,
 } from '@hr-management/validation';
 import { successResponse } from '../common/responses/success-response';
+import { Prisma } from '../generated/prisma/client.js';
 
 @Injectable()
 export class HolidayService {
@@ -21,12 +22,23 @@ export class HolidayService {
       throw new ConflictException('A holiday already exists on this date.');
     }
 
-    const holiday = await this.holidayRepository.create({
-      name: input.name.trim(),
-      date: input.date,
-    });
+    try {
+      const holiday = await this.holidayRepository.create({
+        name: input.name.trim(),
+        date: input.date,
+      });
 
-    return successResponse(holiday, 'Holiday created successfully.');
+      return successResponse(holiday, 'Holiday created successfully.');
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('A holiday already exists on this date.');
+      }
+
+      throw error;
+    }
   }
   async findAll() {
     const holidays = await this.holidayRepository.findAll();

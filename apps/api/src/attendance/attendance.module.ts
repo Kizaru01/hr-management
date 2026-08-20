@@ -8,13 +8,7 @@ import { LeaveModule } from '../leave/leave.module.js';
 import { HolidayModule } from '../holliday/holliday.module.js';
 
 @Module({
-  imports: [
-    EmployeeModule,
-    ShiftModule,
-    LeaveModule,
-    AttendanceModule,
-    HolidayModule,
-  ],
+  imports: [EmployeeModule, ShiftModule, LeaveModule, HolidayModule],
   controllers: [AttendanceController],
   providers: [AttendanceService, AttendanceRepository],
   exports: [AttendanceService, AttendanceRepository],

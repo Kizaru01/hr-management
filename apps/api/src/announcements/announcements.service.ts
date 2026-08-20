@@ -137,15 +137,13 @@ export class AnnouncementsService {
           ]
             .filter(Boolean)
             .join(' ')
-        : announcement.createdBy.email;
+        : 'Management';
 
       return {
         ...announcement,
 
         createdBy: {
           id: announcement.createdBy.id,
-          email: announcement.createdBy.email,
-          role: announcement.createdBy.role,
           name,
         },
       };
