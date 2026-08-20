@@ -19,6 +19,7 @@ import { PerformanceReviewService } from './performance-review/performance-revie
 import { PerformanceReviewModule } from './performance-review/performance-review.module';
 import { NotificationModule } from './notification/notification.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { AuditLogModule } from './audit-log/audit-log.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     PerformanceReviewModule,
     NotificationModule,
     DashboardModule,
+    AuditLogModule,
   ],
   controllers: [AppController, PerformanceReviewController],
   providers: [AppService, PerformanceReviewService],

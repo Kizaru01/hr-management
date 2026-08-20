@@ -197,4 +197,40 @@ export class AnnouncementsRepository {
       },
     });
   }
+  countActive(now: Date) {
+    return this.prisma.announcement.count({
+      where: {
+        isActive: true,
+        publishedAt: {
+          lte: now,
+        },
+        OR: [
+          {
+            expiresAt: null,
+          },
+          {
+            expiresAt: {
+              gte: now,
+            },
+          },
+        ],
+      },
+    });
+  }
+  findRecent(limit = 5) {
+    return this.prisma.announcement.findMany({
+      take: limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        id: true,
+        title: true,
+        audience: true,
+        publishedAt: true,
+        expiresAt: true,
+        isActive: true,
+      },
+    });
+  }
 }

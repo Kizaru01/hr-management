@@ -4,9 +4,10 @@ import { EmployeeDocumentsController } from './employee-documents.controller';
 import { EmployeeDocumentRepository } from './employee-document.repository';
 import { EmployeeModule } from '../employee/employee.module';
 import { NotificationModule } from '../notification/notification.module';
+import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
-  imports: [EmployeeModule, NotificationModule],
+  imports: [EmployeeModule, NotificationModule, AuditLogModule],
   providers: [EmployeeDocumentService, EmployeeDocumentRepository],
   controllers: [EmployeeDocumentsController],
   exports: [EmployeeDocumentRepository],

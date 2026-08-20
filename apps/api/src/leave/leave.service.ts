@@ -9,6 +9,7 @@ import { CreateLeaveInput, RejectLeaveInput } from '@hr-management/validation';
 import { successResponse } from '../common/responses/success-response';
 import { LeaveRepository } from './leave.repository';
 import { NotificationService } from '../notification/notification.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class LeaveService {
@@ -16,6 +17,7 @@ export class LeaveService {
     private readonly employeeRepository: EmployeeRepository,
     private readonly leaveRepository: LeaveRepository,
     private readonly notificationService: NotificationService,
+    private readonly auditLogService: AuditLogService,
   ) {}
   async create(userId: string, input: CreateLeaveInput) {
     const employee = await this.employeeRepository.findByUserId(userId);
@@ -97,18 +99,23 @@ export class LeaveService {
     if (leave.employee.userId) {
       await this.notificationService.create({
         userId: leave.employee.userId,
-
         title: 'Leave request approved',
-
         message: 'Your leave request has been approved.',
-
         type: 'leave',
-
         resourceType: 'leave_request',
         resourceId: leave.id,
       });
     }
-
+    await this.auditLogService.create({
+      actorUserId: currentUserId,
+      action: 'leave.approve',
+      entityType: 'LeaveRequest',
+      entityId: leave.id,
+      metadata: {
+        previousStatus: leave.status,
+        newStatus: 'approved',
+      },
+    });
     return successResponse(
       approvedLeave,
       'Leave request approved successfully.',
@@ -158,17 +165,24 @@ export class LeaveService {
     if (leave.employee.userId) {
       await this.notificationService.create({
         userId: leave.employee.userId,
-
         title: 'Leave request rejected',
-
         message: 'Your leave request has been rejected.',
-
         type: 'leave',
-
         resourceType: 'leave_request',
         resourceId: leave.id,
       });
     }
+
+    await this.auditLogService.create({
+      actorUserId: approverUserId,
+      action: 'leave.reject',
+      entityType: 'LeaveRequest',
+      entityId: leave.id,
+      metadata: {
+        previousStatus: leave.status,
+        newStatus: 'rejected',
+      },
+    });
 
     return successResponse(
       rejectedLeave,

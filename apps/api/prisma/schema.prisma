@@ -78,6 +78,7 @@ model User {
   performanceReviewsGiven PerformanceReview[]
   uploadedDocuments       EmployeeDocument[]
   announcements           Announcement[]
+  auditLogs               AuditLog[]
 
   activationTokenHash String?
   activationExpiresAt DateTime?
@@ -109,9 +110,11 @@ model Employee {
   emergencyContactName  String?
   emergencyContactPhone String?
 
-  hireDate         DateTime
-  employmentType   String
-  employmentStatus String   @default("active")
+  hireDate          DateTime
+  employmentType    String
+  employmentStatus  String    @default("active")
+  terminationDate   DateTime? @db.Date
+  terminationReason String?
 
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id])
@@ -398,5 +401,24 @@ model Notification {
 
   @@index([userId])
   @@index([userId, isRead])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  actorUserId String?
+  actorUser   User?   @relation(fields: [actorUserId], references: [id])
+
+  action     String
+  entityType String
+  entityId   String?
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
+  @@index([actorUserId])
+  @@index([entityType, entityId])
   @@index([createdAt])
 }

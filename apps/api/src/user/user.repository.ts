@@ -82,4 +82,14 @@ export class UserRepository {
       },
     });
   }
+  deactivate(userId: string) {
+    return this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        isActive: false,
+      },
+    });
+  }
 }

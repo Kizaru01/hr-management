@@ -26,6 +26,7 @@ import { AssignManagerDto } from './dto/create-manager.dto.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'node:path';
+import { TerminateEmployeeDto } from './dto/create-termination.dto.js';
 
 @Controller('employee')
 @UseGuards(JwtAuthGuard)
@@ -103,8 +104,22 @@ export class EmployeeController {
   @Patch(':id/manager')
   @UseGuards(RolesGuard)
   @Roles('admin', 'hr')
-  assignManager(@Param('id') id: string, @Body() input: AssignManagerDto) {
-    return this.employeeService.assignManager(id, input);
+  assignManager(
+    @Param('id') id: string,
+    @Body() input: AssignManagerDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.employeeService.assignManager(id, input, user.id);
+  }
+  @Patch(':id/terminate')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'hr')
+  terminate(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() input: TerminateEmployeeDto,
+  ) {
+    return this.employeeService.terminate(id, user.id, input);
   }
   @Patch(':id')
   @UseGuards(RolesGuard)

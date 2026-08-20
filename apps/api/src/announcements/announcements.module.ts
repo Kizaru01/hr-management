@@ -6,9 +6,16 @@ import { DepartmentModule } from '../department/department.module';
 import { BranchModule } from '../branch/branch.module';
 import { EmployeeModule } from '../employee/employee.module';
 import { NotificationModule } from '../notification/notification.module';
+import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
-  imports: [DepartmentModule, BranchModule, EmployeeModule, NotificationModule],
+  imports: [
+    DepartmentModule,
+    BranchModule,
+    EmployeeModule,
+    NotificationModule,
+    AuditLogModule,
+  ],
   controllers: [AnnouncementsController],
   providers: [AnnouncementsService, AnnouncementsRepository],
   exports: [AnnouncementsRepository],

@@ -71,6 +71,7 @@ export class EmployeeRepository {
         position: true,
         branch: true,
         subordinates: true,
+        manager: true,
       },
     });
   }
@@ -210,6 +211,40 @@ export class EmployeeRepository {
       where: {
         employmentStatus,
       },
+    });
+  }
+  async terminateWithUserDeactivation(
+    employeeId: string,
+    userId: string | null,
+    terminationDate: Date,
+    terminationReason: string,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const employee = await tx.employee.update({
+        where: {
+          id: employeeId,
+        },
+
+        data: {
+          employmentStatus: 'terminated',
+          terminationDate,
+          terminationReason,
+        },
+      });
+
+      if (userId) {
+        await tx.user.update({
+          where: {
+            id: userId,
+          },
+
+          data: {
+            isActive: false,
+          },
+        });
+      }
+
+      return employee;
     });
   }
 }

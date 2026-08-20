@@ -5,9 +5,17 @@ import { EmployeeRepository } from './employee.repository';
 import { PositionModule } from '../position/position.module';
 import { BranchModule } from '../branch/branch.module';
 import { DepartmentModule } from '../department/department.module';
+import { AuditLogModule } from '../audit-log/audit-log.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [PositionModule, BranchModule, DepartmentModule],
+  imports: [
+    PositionModule,
+    BranchModule,
+    DepartmentModule,
+    AuditLogModule,
+    UserModule,
+  ],
   controllers: [EmployeeController],
   providers: [EmployeeService, EmployeeRepository],
   exports: [EmployeeRepository, EmployeeService],

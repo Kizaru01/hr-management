@@ -331,7 +331,7 @@ export class AttendanceService {
       'Employee attendance summary retrieved successfully.',
     );
   }
-  async getCompanyDailySummary(date: string) {
+  async buildCompanyDailyAttendance(date: string) {
     const workDate = new Date(`${date}T00:00:00.000Z`);
 
     const [holiday, employees, assignments, approvedLeaves, attendances] =
@@ -432,6 +432,11 @@ export class AttendanceService {
         summary.scheduled++;
       }
     }
+
+    return summary;
+  }
+  async getCompanyDailySummary(date: string) {
+    const summary = await this.buildCompanyDailyAttendance(date);
 
     return successResponse(
       summary,

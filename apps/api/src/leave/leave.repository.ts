@@ -48,15 +48,6 @@ export class LeaveRepository {
   }
   findAll() {
     return this.prisma.leaveRequest.findMany({
-      include: {
-        employee: {
-          include: {
-            department: true,
-            position: true,
-            branch: true,
-          },
-        },
-      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -128,6 +119,32 @@ export class LeaveRepository {
 
         endDate: {
           gte: workDate,
+        },
+      },
+    });
+  }
+  countPending() {
+    return this.prisma.leaveRequest.count({
+      where: {
+        status: 'pending',
+      },
+    });
+  }
+  findRecent(limit = 5) {
+    return this.prisma.leaveRequest.findMany({
+      take: limit,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        employee: {
+          select: {
+            id: true,
+            employeeNumber: true,
+            firstName: true,
+            middleName: true,
+            lastName: true,
+          },
         },
       },
     });

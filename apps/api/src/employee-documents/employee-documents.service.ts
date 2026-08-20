@@ -9,6 +9,7 @@ import { CreateEmployeeDocumentInput } from '@hr-management/validation';
 import { successResponse } from '../common/responses/success-response';
 import { EmployeeDocumentRepository } from './employee-document.repository';
 import { NotificationService } from '../notification/notification.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class EmployeeDocumentService {
@@ -16,6 +17,7 @@ export class EmployeeDocumentService {
     private readonly employeeRepository: EmployeeRepository,
     private readonly employeeDocumentRepository: EmployeeDocumentRepository,
     private readonly notificationService: NotificationService,
+    private readonly auditLogService: AuditLogService,
   ) {}
   async create(
     employeeId: string,
@@ -71,6 +73,17 @@ export class EmployeeDocumentService {
         resourceId: document.id,
       });
     }
+    await this.auditLogService.create({
+      actorUserId: uploadedByUserId,
+      action: 'employee_document.create',
+      entityType: 'EmployeeDocument',
+      entityId: document.id,
+      metadata: {
+        employeeId: employee.id,
+        title: document.title,
+        type: document.type,
+      },
+    });
     return successResponse(document, 'Employee document created successfully.');
   }
   async findByEmployeeId(employeeId: string) {
@@ -105,7 +118,7 @@ export class EmployeeDocumentService {
       'Employee documents retrieved successfully.',
     );
   }
-  async deactivate(id: string) {
+  async deactivate(id: string, currentUserId: string) {
     const document = await this.employeeDocumentRepository.findById(id);
 
     if (!document) {
@@ -118,6 +131,16 @@ export class EmployeeDocumentService {
 
     const updatedDocument = await this.employeeDocumentRepository.update(id, {
       isActive: false,
+    });
+
+    await this.auditLogService.create({
+      actorUserId: currentUserId,
+      action: 'employee_document.deactivate',
+      entityType: 'EmployeeDocument',
+      entityId: document.id,
+      metadata: {
+        employeeId: document.employeeId,
+      },
     });
 
     return successResponse(
