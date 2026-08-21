@@ -1,51 +1,51 @@
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import type { Request } from 'express';
+// import {
+//   CanActivate,
+//   ExecutionContext,
+//   Injectable,
+//   UnauthorizedException,
+// } from '@nestjs/common';
+// import { JwtService } from '@nestjs/jwt';
+// import type { Request } from 'express';
 
-interface JwtPayload {
-  email: string;
-  sub: string;
-  role: 'admin' | 'hr' | 'employee';
-}
+// interface JwtPayload {
+//   email: string;
+//   sub: string;
+//   role: 'admin' | 'hr' | 'employee';
+// }
 
-@Injectable()
-export class AuthGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) {}
+// @Injectable()
+// export class AuthGuard implements CanActivate {
+//   constructor(private readonly jwtService: JwtService) {}
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
+//   async canActivate(context: ExecutionContext): Promise<boolean> {
+//     const request = context.switchToHttp().getRequest<Request>();
 
-    const token = this.extractToken(request);
+//     const token = this.extractToken(request);
 
-    if (!token) {
-      throw new UnauthorizedException('Authentication required.');
-    }
+//     if (!token) {
+//       throw new UnauthorizedException('Authentication required.');
+//     }
 
-    try {
-      const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
+//     try {
+//       const payload = await this.jwtService.verifyAsync<JwtPayload>(token);
 
-      request['user'] = payload;
+//       request['user'] = payload;
 
-      return true;
-    } catch {
-      throw new UnauthorizedException('Invalid or expired access token.');
-    }
-  }
+//       return true;
+//     } catch {
+//       throw new UnauthorizedException('Invalid or expired access token.');
+//     }
+//   }
 
-  private extractToken(request: Request): string | undefined {
-    const authorization = request.headers.authorization;
+//   private extractToken(request: Request): string | undefined {
+//     const authorization = request.headers.authorization;
 
-    if (!authorization) {
-      return undefined;
-    }
+//     if (!authorization) {
+//       return undefined;
+//     }
 
-    const [type, token] = authorization.split(' ');
+//     const [type, token] = authorization.split(' ');
 
-    return type === 'Bearer' ? token : undefined;
-  }
-}
+//     return type === 'Bearer' ? token : undefined;
+//   }
+// }

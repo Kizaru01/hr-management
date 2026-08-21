@@ -237,13 +237,11 @@ export class EmployeeRepository {
           where: {
             id: userId,
           },
-
           data: {
             isActive: false,
           },
         });
       }
-
       return employee;
     });
   }

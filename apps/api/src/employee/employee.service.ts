@@ -420,13 +420,9 @@ export class EmployeeService {
 
       metadata: {
         previousStatus: employee.employmentStatus,
-
         newStatus: 'terminated',
-
         terminationDate: input.terminationDate.toISOString(),
-
         reason: terminationReason,
-
         userDeactivated: Boolean(employee.userId),
       },
     });

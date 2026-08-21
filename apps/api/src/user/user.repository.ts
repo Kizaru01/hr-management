@@ -67,6 +67,7 @@ export class UserRepository {
     return this.prisma.user.update({
       where: { id },
       data: {
+        isActive: true,
         passwordHash,
         status: 'active',
         activationTokenHash: null,

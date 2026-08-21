@@ -64,9 +64,13 @@ export class AuthService {
     if (!user || !user.passwordHash) {
       throw new UnauthorizedException('Invalid email or password.');
     }
-
     if (user.status !== 'active') {
       throw new UnauthorizedException('Account is not active.');
+    }
+    if (user.isActive !== true) {
+      throw new UnauthorizedException(
+        'You are not allowed to access this website.',
+      );
     }
 
     const passwordMatches = await this.passwordService.verify(
