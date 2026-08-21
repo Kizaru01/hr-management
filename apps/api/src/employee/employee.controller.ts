@@ -29,7 +29,7 @@ import { extname } from 'node:path';
 import { TerminateEmployeeDto } from './dto/create-termination.dto.js';
 
 @Controller('employee')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
 
@@ -39,6 +39,7 @@ export class EmployeeController {
   findAll() {
     return this.employeeService.findAll();
   }
+  @Roles('admin', 'hr')
   @Post()
   create(@Body() input: CreateEmployeeDto) {
     return this.employeeService.create(input);
@@ -51,6 +52,7 @@ export class EmployeeController {
   findMyTeam(@CurrentUser() user: AuthenticatedUser) {
     return this.employeeService.findMyTeam(user.id);
   }
+  @Roles('admin', 'hr')
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.employeeService.findOne(id);
@@ -122,14 +124,19 @@ export class EmployeeController {
     return this.employeeService.terminate(id, user.id, input);
   }
   @Patch(':id')
-  @UseGuards(RolesGuard)
-  update(@Param('id') id: string, @Body() input: UpdateEmployeeDto) {
-    return this.employeeService.update(id, input);
+  @Roles('admin', 'hr')
+  update(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() input: UpdateEmployeeDto,
+  ) {
+    return this.employeeService.update(id, input, user.id);
   }
   @Delete('me/avatar')
   removeMyAvatar(@CurrentUser() user: AuthenticatedUser) {
     return this.employeeService.removeMyAvatar(user.id);
   }
+  @Roles('admin', 'hr')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.employeeService.remove(id);

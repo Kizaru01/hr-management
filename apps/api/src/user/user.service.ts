@@ -104,7 +104,14 @@ export class UserService {
 
     return successResponse(
       {
-        user,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+        },
         activationToken: activation.token,
       },
       'User created successfully.',

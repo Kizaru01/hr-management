@@ -5,7 +5,6 @@ import { UserRepository } from '../../user/user.repository';
 
 interface JwtPayload {
   sub: string;
-  email: string;
   role: 'admin' | 'hr' | 'employee';
 }
 
@@ -28,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: JwtPayload) {
     const user = await this.userRepository.findById(payload.sub);
 
-    if (!user || !user.isActive) {
+    if (!user || user.status !== 'active' || !user.isActive) {
       throw new UnauthorizedException('Account is inactive.');
     }
 

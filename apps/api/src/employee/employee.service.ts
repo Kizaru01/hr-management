@@ -111,7 +111,7 @@ export class EmployeeService {
 
     return successResponse(employees, 'Team retrieved successfully.');
   }
-  async update(id: string, input: UpdateEmployeeInput) {
+  async update(id: string, input: UpdateEmployeeInput, currentUserId: string) {
     const existingEmployee = await this.employeeRepository.findById(id);
 
     if (!existingEmployee) {
@@ -164,10 +164,10 @@ export class EmployeeService {
       }
     }
 
-    try {
-      const employee = await this.employeeRepository.update(id, updateData);
+    let employee: Awaited<ReturnType<EmployeeRepository['update']>>;
 
-      return successResponse(employee, 'Employee updated successfully.');
+    try {
+      employee = await this.employeeRepository.update(id, updateData);
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -187,6 +187,18 @@ export class EmployeeService {
 
       throw error;
     }
+
+    await this.auditLogService.create({
+      actorUserId: currentUserId,
+      action: 'employee.update',
+      entityType: 'Employee',
+      entityId: employee.id,
+      metadata: {
+        changedFields: Object.keys(input),
+      },
+    });
+
+    return successResponse(employee, 'Employee updated successfully.');
   }
   async updateMe(userId: string, input: UpdateMyProfileInput) {
     const employee = await this.employeeRepository.findByUserId(userId);
@@ -333,50 +345,18 @@ export class EmployeeService {
       manager.id,
     );
 
-    const changes: Record<
-      string,
-      {
-        from: string | null;
-        to: string | null;
-      }
-    > = {};
-
-    if (existingEmployee.departmentId !== updatedEmployee.departmentId) {
-      changes.departmentId = {
-        from: existingEmployee.departmentId,
-        to: updatedEmployee.departmentId,
-      };
-    }
-
-    if (existingEmployee.positionId !== updatedEmployee.positionId) {
-      changes.positionId = {
-        from: existingEmployee.positionId,
-        to: updatedEmployee.positionId,
-      };
-    }
-
-    if (existingEmployee.branchId !== updatedEmployee.branchId) {
-      changes.branchId = {
-        from: existingEmployee.branchId,
-        to: updatedEmployee.branchId,
-      };
-    }
-
-    if (
-      existingEmployee.employmentStatus !== updatedEmployee.employmentStatus
-    ) {
-      changes.employmentStatus = {
-        from: existingEmployee.employmentStatus,
-        to: updatedEmployee.employmentStatus,
-      };
-    }
     await this.auditLogService.create({
       actorUserId: currentUserId,
       action: 'manager.assign',
       entityType: 'Employee',
       entityId: existingEmployee.id,
       metadata: {
-        changes,
+        changes: {
+          managerId: {
+            from: existingEmployee.managerId,
+            to: updatedEmployee.managerId,
+          },
+        },
       },
     });
     return successResponse(updatedEmployee, 'Manager assigned successfully.');

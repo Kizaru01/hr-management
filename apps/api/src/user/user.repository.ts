@@ -9,8 +9,12 @@ export class UserRepository {
   findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      include: {
-        employee: true,
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        status: true,
+        isActive: true,
       },
     });
   }

@@ -6,6 +6,42 @@ import type {
 } from '@hr-management/validation';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../generated/prisma/client.js';
+
+const workProfileSelect = {
+  id: true,
+  employeeNumber: true,
+  firstName: true,
+  middleName: true,
+  lastName: true,
+  email: true,
+  avatar: true,
+  departmentId: true,
+  positionId: true,
+  branchId: true,
+  employmentType: true,
+  employmentStatus: true,
+  department: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
+    },
+  },
+  position: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  branch: {
+    select: {
+      id: true,
+      code: true,
+      name: true,
+    },
+  },
+} satisfies Prisma.EmployeeSelect;
+
 @Injectable()
 export class EmployeeRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -70,8 +106,12 @@ export class EmployeeRepository {
         department: true,
         position: true,
         branch: true,
-        subordinates: true,
-        manager: true,
+        subordinates: {
+          select: workProfileSelect,
+        },
+        manager: {
+          select: workProfileSelect,
+        },
       },
     });
   }
@@ -174,6 +214,7 @@ export class EmployeeRepository {
         managerId,
         employmentStatus: 'active',
       },
+      select: workProfileSelect,
       orderBy: {
         firstName: 'asc',
       },

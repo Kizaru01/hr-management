@@ -6,12 +6,18 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+import { Roles } from '../auth/decorators/roles.decorator.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { CreatePositionDto } from './dto/create-position.dto.js';
 import { UpdatePositionDto } from './dto/update-position.dto.js';
 import { PositionService } from './position.service.js';
 
 @Controller('positions')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin', 'hr')
 export class PositionController {
   constructor(private readonly positionService: PositionService) {}
 

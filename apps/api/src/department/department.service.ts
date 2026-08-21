@@ -10,19 +10,14 @@ import type {
 } from '@hr-management/validation';
 import { Prisma } from '../generated/prisma/client.js';
 import { successResponse } from '../common/responses/success-response';
-import { errorResponse } from '../common/responses/failed-response';
 @Injectable()
 export class DepartmentService {
   constructor(private readonly departmentRepository: DepartmentRepository) {}
 
   async findAll() {
-    try {
-      const departments = await this.departmentRepository.findAll();
+    const departments = await this.departmentRepository.findAll();
 
-      return successResponse(departments, 'Department retrieved successfully');
-    } catch (error) {
-      return errorResponse(error);
-    }
+    return successResponse(departments, 'Department retrieved successfully');
   }
 
   async create(input: CreateDepartmentInput) {
@@ -82,12 +77,47 @@ export class DepartmentService {
       throw new NotFoundException('Department not found.');
     }
 
-    const updatedDepartment = await this.departmentRepository.update(id, input);
+    const nextCode = input.code?.trim().toUpperCase() ?? department.code;
+    const nextName = input.name?.trim() ?? department.name;
+    const nextNameKey = nextName.toUpperCase();
 
-    return successResponse(
-      updatedDepartment,
-      'Updated department successfully',
-    );
+    const [duplicateCode, duplicateName] = await Promise.all([
+      this.departmentRepository.findByCode(nextCode),
+      this.departmentRepository.findByName(nextNameKey),
+    ]);
+
+    if (duplicateCode && duplicateCode.id !== id) {
+      throw new ConflictException('Department code already exists.');
+    }
+
+    if (duplicateName && duplicateName.id !== id) {
+      throw new ConflictException('Department name already exists.');
+    }
+
+    try {
+      const updatedDepartment = await this.departmentRepository.update(id, {
+        ...input,
+        ...(input.code !== undefined && { code: nextCode }),
+        ...(input.name !== undefined && {
+          name: nextName,
+          nameKey: nextNameKey,
+        }),
+      });
+
+      return successResponse(
+        updatedDepartment,
+        'Updated department successfully',
+      );
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException('Department code or name already exists.');
+      }
+
+      throw error;
+    }
   }
 
   async remove(id: string) {
