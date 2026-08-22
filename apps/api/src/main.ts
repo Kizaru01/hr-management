@@ -6,7 +6,10 @@ import { GlobalErrorFilter } from './common/filters/globalError.filter';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
-
+  app.enableCors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+  });
   const port = Number(process.env.PORT ?? 4000);
 
   app.useGlobalPipes(new ZodValidationPipe());
