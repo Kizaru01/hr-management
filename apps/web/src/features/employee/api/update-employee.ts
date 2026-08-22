@@ -1,5 +1,6 @@
+import type { UpdateEmployeeInput } from "@hr-management/validation";
 import type { ApiResponse } from "@/types/api";
-import type { EmployeeDetails, UpdateEmployeeInput } from "../types/employee";
+import type { EmployeeDetails } from "../types/employee";
 
 export const updateEmployee = async (
   id: string,

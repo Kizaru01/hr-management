@@ -31,11 +31,9 @@ export async function apiClient<T>(
 
     headers: {
       "Content-Type": "application/json",
-
       ...(token && {
         Authorization: `Bearer ${token}`,
       }),
-
       ...headers,
     },
   });

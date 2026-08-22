@@ -2,8 +2,8 @@
 
 import { FormEvent, useState } from 'react';
 import { login } from '@/features/auth/api/login';
-import { ApiError } from '@/lib/api.client';
 import { useRouter } from 'next/navigation';
+import { ApiError } from '@/lib/api/api.client';
 
 export default function LoginPage() {
   const router = useRouter();

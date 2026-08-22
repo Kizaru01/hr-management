@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogoutButton } from '@/features/auth/components/logout-button';
-import { CurrentUser } from '@/features/dashboard/server/get-current-user';
+import { CurrentUser } from '@/features/auth/server/get-current-user';
+
 
 interface HrSidebarProps {
   user: CurrentUser;

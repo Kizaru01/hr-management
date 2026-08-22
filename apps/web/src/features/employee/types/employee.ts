@@ -1,3 +1,5 @@
+import type { UpdateEmployeeInput } from "@hr-management/validation";
+
 export interface EmployeeListItem {
   id: string;
   employeeNumber: string;
@@ -26,7 +28,7 @@ export interface EmployeeListItem {
 export interface EmployeeDetails extends EmployeeListItem {
   phoneNumber: string | null;
   hireDate: string;
-  employmentType: string;
+  employmentType: NonNullable<UpdateEmployeeInput["employmentType"]>;
 
   manager: {
     id: string;
@@ -35,17 +37,6 @@ export interface EmployeeDetails extends EmployeeListItem {
   } | null;
 }
 
-export interface UpdateEmployeeInput {
-  firstName?: string;
-  middleName?: string;
-  lastName?: string;
-  email?: string;
-  hireDate?: string;
-  departmentId?: string;
-  positionId?: string;
-  branchId?: string;
-  employmentType?: string;
-}
 export interface LookupOption {
   label: string;
   value: string;

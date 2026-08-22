@@ -1,5 +1,5 @@
 import { getBranches } from "@/features/branch/server/get-branches";
-import { getDepartments } from "@/features/deparments/server/get-departments";
+import { getDepartments } from "@/features/departments/server/get-departments";
 import { EmployeeEditForm } from "@/features/employee/components/employee-edit-form";
 import { getEmployee } from "@/features/employee/server/get-employee";
 

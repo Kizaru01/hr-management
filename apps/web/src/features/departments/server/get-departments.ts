@@ -7,5 +7,5 @@ interface Department {
 }
 
 export async function getDepartments() {
-  return authenticatedApi<ApiResponse<Department[]>>("/department");
+  return authenticatedApi<ApiResponse<Department[]>>("/departments");
 }

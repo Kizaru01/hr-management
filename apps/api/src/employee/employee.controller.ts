@@ -28,7 +28,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'node:path';
 import { TerminateEmployeeDto } from './dto/create-termination.dto.js';
 
-@Controller('employee')
+@Controller('employees')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}

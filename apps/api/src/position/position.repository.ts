@@ -9,10 +9,11 @@ import { PrismaService } from '../prisma/prisma.service.js';
 export class PositionRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
+  findAll(departmentId?: string) {
     return this.prisma.position.findMany({
-      include: {
-        department: true,
+      where: departmentId ? { departmentId } : undefined,
+      orderBy: {
+        name: 'asc',
       },
     });
   }

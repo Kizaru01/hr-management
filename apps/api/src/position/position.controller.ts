@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
@@ -22,8 +23,8 @@ export class PositionController {
   constructor(private readonly positionService: PositionService) {}
 
   @Get()
-  findAll() {
-    return this.positionService.findAll();
+  findAll(@Query('departmentId') departmentId?: string) {
+    return this.positionService.findAll(departmentId);
   }
 
   @Get(':id')
