@@ -7,5 +7,5 @@ interface Branch {
 }
 
 export async function getBranches() {
-  return authenticatedApi<ApiResponse<Branch[]>>("/branch");
+  return authenticatedApi<ApiResponse<Branch[]>>("/branches");
 }

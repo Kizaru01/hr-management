@@ -20,8 +20,8 @@ export class PositionService {
     private readonly departmentRepository: DepartmentRepository,
   ) {}
 
-  async findAll() {
-    const positions = await this.positionRepository.findAll();
+  async findAll(departmentId?: string) {
+    const positions = await this.positionRepository.findAll(departmentId);
 
     return successResponse(positions, 'Positions retrieved successfully.');
   }

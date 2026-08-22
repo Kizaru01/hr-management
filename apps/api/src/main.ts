@@ -7,7 +7,7 @@ import { GlobalErrorFilter } from './common/filters/globalError.filter';
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: process.env.WEB_URL,
     credentials: true,
   });
   const port = Number(process.env.PORT ?? 4000);

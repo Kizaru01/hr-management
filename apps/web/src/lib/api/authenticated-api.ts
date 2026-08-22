@@ -1,5 +1,17 @@
 import { cookies } from "next/headers";
 
+export class AuthenticatedApiError extends Error {
+  status: number;
+  data: unknown;
+
+  constructor(message: string, status: number, data: unknown) {
+    super(message);
+    this.name = "AuthenticatedApiError";
+    this.status = status;
+    this.data = data;
+  }
+}
+
 export async function authenticatedApi<T>(
   path: string,
   options: RequestInit = {},
@@ -27,9 +39,20 @@ export async function authenticatedApi<T>(
     cache: "no-store",
   });
 
+  const data: unknown = await response.json();
+
   if (!response.ok) {
-    throw new Error(`API request failed with status ${response.status}.`);
+    throw new AuthenticatedApiError(
+      typeof data === "object" &&
+        data !== null &&
+        "message" in data &&
+        typeof data.message === "string"
+        ? String(data.message)
+        : `API request failed with status ${response.status}.`,
+      response.status,
+      data,
+    );
   }
 
-  return response.json() as Promise<T>;
+  return data as T;
 }

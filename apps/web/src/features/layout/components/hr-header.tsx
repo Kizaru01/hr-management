@@ -1,8 +1,6 @@
 'use client';
 
-import { CurrentUser } from "@/features/dashboard/server/get-current-user";
-
-
+import { CurrentUser } from "@/features/auth/server/get-current-user";
 
 interface HrHeaderProps {
   user: CurrentUser;

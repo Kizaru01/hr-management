@@ -10,9 +10,13 @@ export default async function EmployeeLayout({
 }: EmployeeLayoutProps) {
   const user = await getCurrentUser();
 
-  if (!user) {
-    redirect('/login');
-  }
+if (!user) {
+  redirect('/login');
+}
+
+if (user.role !== 'employee') {
+  redirect('/dashboard');
+}
 
   return <>{children}</>;
 }
