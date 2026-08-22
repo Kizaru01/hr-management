@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { FormField } from '@/components/form-field';
 import { SelectField } from '@/components/select-field';
+import { ApiError } from '@/lib/api/api.client';
 
 import { getPositionsByDepartment } from '../api/get-positions-by-department';
 import { updateEmployee } from '../api/update-employee';
@@ -45,36 +46,61 @@ export const EmployeeEditForm = ({
   const [positionId, setPositionId] = useState(
     employee.position.id,
   );
+  const [errorMessage, setErrorMessage] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<
+    Record<string, string[]>
+  >({});
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadPositions = async () => {
-      const { data } =
-        await getPositionsByDepartment(departmentId);
+      setErrorMessage('');
+      setFieldErrors({});
 
-      if (cancelled) {
-        return;
-      }
+      try {
+        const { data } =
+          await getPositionsByDepartment(departmentId);
 
-      const positionOptions = data.map((position) => ({
-        label: position.name,
-        value: position.id,
-      }));
+        if (cancelled) {
+          return;
+        }
 
-      setPositions(positionOptions);
+        const positionOptions = data.map((position) => ({
+          label: position.name,
+          value: position.id,
+        }));
 
-      const employeePositionIsAvailable =
-        departmentId === employee.department.id &&
-        positionOptions.some(
-          (position) => position.value === employee.position.id,
+        setPositions(positionOptions);
+
+        const employeePositionIsAvailable =
+          departmentId === employee.department.id &&
+          positionOptions.some(
+            (position) => position.value === employee.position.id,
+          );
+
+        setPositionId(
+          employeePositionIsAvailable
+            ? employee.position.id
+            : (positionOptions[0]?.value ?? ''),
         );
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
 
-      setPositionId(
-        employeePositionIsAvailable
-          ? employee.position.id
-          : (positionOptions[0]?.value ?? ''),
-      );
+        setErrorMessage(
+          error instanceof ApiError
+            ? error.message
+            : 'Unable to load positions.',
+        );
+        setFieldErrors(
+          error instanceof ApiError && error.details
+            ? error.details
+            : {},
+        );
+      }
     };
 
     void loadPositions();
@@ -100,32 +126,48 @@ export const EmployeeEditForm = ({
     event: React.FormEvent<HTMLFormElement>,
   ) => {
     event.preventDefault();
+    setErrorMessage('');
+    setFieldErrors({});
+    setIsSaving(true);
 
-    const formData = new FormData(event.currentTarget);
-    const selectedEmploymentType = String(
-      formData.get('employmentType'),
-    );
-    const employmentType = employmentTypeOptions.find(
-      (option) => option.value === selectedEmploymentType,
-    )?.value;
+    try {
+      const formData = new FormData(event.currentTarget);
+      const selectedEmploymentType = String(
+        formData.get('employmentType'),
+      );
+      const employmentType = employmentTypeOptions.find(
+        (option) => option.value === selectedEmploymentType,
+      )?.value;
 
-    if (!employmentType) {
-      throw new Error('Invalid employment type.');
+      if (!employmentType) {
+        throw new Error('Invalid employment type.');
+      }
+
+      await updateEmployee(employee.id, {
+        firstName: String(formData.get('firstName')),
+        middleName: String(formData.get('middleName')),
+        lastName: String(formData.get('lastName')),
+        email: String(formData.get('email')),
+        departmentId,
+        positionId,
+        branchId: String(formData.get('branchId')),
+        employmentType,
+      });
+
+      router.push(`/employees/${employee.id}`);
+      router.refresh();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof ApiError
+          ? error.message
+          : 'Unable to update employee.',
+      );
+      setFieldErrors(
+        error instanceof ApiError && error.details ? error.details : {},
+      );
+    } finally {
+      setIsSaving(false);
     }
-
-    await updateEmployee(employee.id, {
-      firstName: String(formData.get('firstName')),
-      middleName: String(formData.get('middleName')),
-      lastName: String(formData.get('lastName')),
-      email: String(formData.get('email')),
-      departmentId,
-      positionId,
-      branchId: String(formData.get('branchId')),
-      employmentType,
-    });
-
-    router.push(`/employees/${employee.id}`);
-    router.refresh();
   };
 
   return (
@@ -190,11 +232,32 @@ export const EmployeeEditForm = ({
         options={employmentTypeOptions}
       />
 
+      {errorMessage && (
+        <div
+          role="alert"
+          className="space-y-1 text-sm text-red-700 sm:col-span-2"
+        >
+          <p>{errorMessage}</p>
+
+          {Object.entries(fieldErrors).length > 0 && (
+            <ul className="list-disc pl-5">
+              {Object.entries(fieldErrors).flatMap(([field, messages]) =>
+                messages.map((message) => (
+                  <li key={`${field}-${message}`}>
+                    {field}: {message}
+                  </li>
+                )),
+              )}
+            </ul>
+          )}
+        </div>
+      )}
+
       <button
-        disabled={!positionId}
+        disabled={!positionId || isSaving}
         className="rounded-md border px-4 py-2 sm:col-span-2"
       >
-        Save changes
+        {isSaving ? 'Saving...' : 'Save changes'}
       </button>
     </form>
   );

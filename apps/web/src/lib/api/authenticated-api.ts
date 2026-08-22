@@ -1,15 +1,13 @@
 import { cookies } from "next/headers";
+import { RequestError } from "@/lib/errors/http-errors";
 
-export class AuthenticatedApiError extends Error {
-  status: number;
-  data: unknown;
-
-  constructor(message: string, status: number, data: unknown) {
-    super(message);
-    this.name = "AuthenticatedApiError";
-    this.status = status;
-    this.data = data;
-  }
+interface ErrorBody {
+  message?: unknown;
+  errors?: unknown;
+  error?: {
+    message?: unknown;
+    details?: unknown;
+  };
 }
 
 export async function authenticatedApi<T>(
@@ -26,7 +24,7 @@ export async function authenticatedApi<T>(
   const token = cookieStore.get("access_token")?.value;
 
   if (!token) {
-    throw new Error("Unauthenticated.");
+    throw new RequestError(401, "Unauthenticated.");
   }
 
   const response = await fetch(`${apiUrl}${path}`, {
@@ -39,20 +37,90 @@ export async function authenticatedApi<T>(
     cache: "no-store",
   });
 
-  const data: unknown = await response.json();
+  return apiResponse<T>(response);
+}
+
+export async function apiResponse<T>(response: Response): Promise<T> {
+  const body = await safeJson<ErrorBody | T>(response);
 
   if (!response.ok) {
-    throw new AuthenticatedApiError(
-      typeof data === "object" &&
-        data !== null &&
-        "message" in data &&
-        typeof data.message === "string"
-        ? String(data.message)
-        : `API request failed with status ${response.status}.`,
+    const errorBody = isObject(body) ? (body as ErrorBody) : undefined;
+    const nestedError = isObject(errorBody?.error)
+      ? errorBody.error
+      : undefined;
+
+    throw new RequestError(
       response.status,
-      data,
+      getErrorMessage(errorBody, nestedError, response.status),
+      normalizeErrorDetails(errorBody?.errors ?? nestedError?.details),
     );
   }
 
-  return data as T;
+  return body as T;
+}
+
+function getErrorMessage(
+  errorBody: ErrorBody | undefined,
+  nestedError: ErrorBody["error"] | undefined,
+  statusCode: number,
+): string {
+  if (typeof errorBody?.message === "string") {
+    return errorBody.message;
+  }
+
+  if (typeof nestedError?.message === "string") {
+    return nestedError.message;
+  }
+
+  return statusCode >= 500
+    ? "Internal server error"
+    : `API request failed with status ${statusCode}.`;
+}
+
+function normalizeErrorDetails(
+  details: unknown,
+): Record<string, string[]> | undefined {
+  if (!isObject(details)) {
+    return undefined;
+  }
+
+  const normalizedDetails = Object.entries(details).reduce<
+    Record<string, string[]>
+  >((result, [field, value]) => {
+    const messages = Array.isArray(value)
+      ? value.filter(
+          (message): message is string => typeof message === "string",
+        )
+      : typeof value === "string"
+        ? [value]
+        : [];
+
+    if (messages.length > 0) {
+      result[field] = messages;
+    }
+
+    return result;
+  }, {});
+
+  return Object.keys(normalizedDetails).length > 0
+    ? normalizedDetails
+    : undefined;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+async function safeJson<T>(response: Response): Promise<T | null> {
+  const text = await response.text();
+
+  if (!text) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
 }
