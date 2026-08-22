@@ -51,15 +51,15 @@ export class AttendanceService {
       throw new ConflictException('You have already checked in today.');
     }
 
-    const [assignment, holiday, approvedLeave] = await Promise.all([
+    const [assignment, approvedLeave] = await Promise.all([
       this.employeeShiftRepository.findActiveAssignment(employee.id, workDate),
-      this.holidayRepository.findByDate(workDate),
+      // this.holidayRepository.findByDate(workDate),
       this.leaveRepository.findApprovedForDate(employee.id, workDate),
     ]);
 
-    if (holiday?.isActive) {
-      throw new BadRequestException('You cannot check in on a holiday.');
-    }
+    // if (holiday?.isActive) {
+    //   throw new BadRequestException('You cannot check in on a holiday.');
+    // }
 
     if (!assignment) {
       throw new BadRequestException('No active shift is assigned for today.');
