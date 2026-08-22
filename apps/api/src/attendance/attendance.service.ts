@@ -51,13 +51,32 @@ export class AttendanceService {
       throw new ConflictException('You have already checked in today.');
     }
 
-    const assignment = await this.employeeShiftRepository.findActiveAssignment(
-      employee.id,
-      workDate,
-    );
+    const [assignment, holiday, approvedLeave] = await Promise.all([
+      this.employeeShiftRepository.findActiveAssignment(employee.id, workDate),
+      this.holidayRepository.findByDate(workDate),
+      this.leaveRepository.findApprovedForDate(employee.id, workDate),
+    ]);
+
+    if (holiday?.isActive) {
+      throw new BadRequestException('You cannot check in on a holiday.');
+    }
 
     if (!assignment) {
       throw new BadRequestException('No active shift is assigned for today.');
+    }
+
+    const weekday = getWeekday(workDate);
+
+    if (!assignment.workDays.includes(weekday)) {
+      throw new BadRequestException(
+        'Today is not one of your shift work days.',
+      );
+    }
+
+    if (approvedLeave) {
+      throw new BadRequestException(
+        'You cannot check in while on approved leave.',
+      );
     }
 
     const expectedStart = getShiftDateTime(
@@ -102,11 +121,44 @@ export class AttendanceService {
     const now = new Date();
     const workDate = getWorkDate(now);
 
-    const attendance =
-      await this.attendanceRepository.findByEmployeeAndWorkDate(
-        employee.id,
-        workDate,
-      );
+    let attendance = await this.attendanceRepository.findByEmployeeAndWorkDate(
+      employee.id,
+      workDate,
+    );
+
+    let assignment = attendance
+      ? await this.employeeShiftRepository.findActiveAssignment(
+          employee.id,
+          attendance.workDate,
+        )
+      : null;
+
+    if (!attendance) {
+      const previousWorkDate = new Date(workDate);
+      previousWorkDate.setUTCDate(previousWorkDate.getUTCDate() - 1);
+
+      const previousAttendance =
+        await this.attendanceRepository.findByEmployeeAndWorkDate(
+          employee.id,
+          previousWorkDate,
+        );
+
+      if (previousAttendance && !previousAttendance.checkOutAt) {
+        const previousAssignment =
+          await this.employeeShiftRepository.findActiveAssignment(
+            employee.id,
+            previousAttendance.workDate,
+          );
+
+        if (
+          previousAssignment &&
+          previousAssignment.shift.endTime <= previousAssignment.shift.startTime
+        ) {
+          attendance = previousAttendance;
+          assignment = previousAssignment;
+        }
+      }
+    }
 
     if (!attendance) {
       throw new BadRequestException('You must check in before checking out.');
@@ -116,17 +168,12 @@ export class AttendanceService {
       throw new ConflictException('You have already checked out today.');
     }
 
-    const assignment = await this.employeeShiftRepository.findActiveAssignment(
-      employee.id,
-      workDate,
-    );
-
     if (!assignment) {
       throw new BadRequestException('No active shift is assigned for today.');
     }
 
     const expectedEnd = getShiftEndDateTime(
-      workDate,
+      attendance.workDate,
       assignment.shift.startTime,
       assignment.shift.endTime,
     );
@@ -331,7 +378,7 @@ export class AttendanceService {
       'Employee attendance summary retrieved successfully.',
     );
   }
-  async getCompanyDailySummary(date: string) {
+  async buildCompanyDailyAttendance(date: string) {
     const workDate = new Date(`${date}T00:00:00.000Z`);
 
     const [holiday, employees, assignments, approvedLeaves, attendances] =
@@ -432,6 +479,11 @@ export class AttendanceService {
         summary.scheduled++;
       }
     }
+
+    return summary;
+  }
+  async getCompanyDailySummary(date: string) {
+    const summary = await this.buildCompanyDailyAttendance(date);
 
     return successResponse(
       summary,

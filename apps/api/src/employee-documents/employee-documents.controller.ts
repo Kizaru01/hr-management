@@ -91,7 +91,10 @@ export class EmployeeDocumentsController {
   @Patch('documents/:id/deactivate')
   @UseGuards(RolesGuard)
   @Roles('admin', 'hr')
-  deactivateDocument(@Param('id') id: string) {
-    return this.employeeDocumentService.deactivate(id);
+  deactivateDocument(
+    @Param('id') id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.employeeDocumentService.deactivate(id, user.id);
   }
 }

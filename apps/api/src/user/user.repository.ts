@@ -9,8 +9,12 @@ export class UserRepository {
   findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      include: {
-        employee: true,
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        status: true,
+        isActive: true,
       },
     });
   }
@@ -67,6 +71,7 @@ export class UserRepository {
     return this.prisma.user.update({
       where: { id },
       data: {
+        isActive: true,
         passwordHash,
         status: 'active',
         activationTokenHash: null,
@@ -79,6 +84,16 @@ export class UserRepository {
       where: { id },
       data: {
         lastLoginAt: new Date(),
+      },
+    });
+  }
+  deactivate(userId: string) {
+    return this.prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        isActive: false,
       },
     });
   }

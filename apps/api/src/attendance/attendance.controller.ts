@@ -10,7 +10,7 @@ import { getWorkDate } from './attendance-date.js';
 import { AttendanceRangeQueryDto } from './dto/attendance-range-query.dto.js';
 
 @Controller('attendance')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class AttendanceController {
   constructor(private readonly attendanceService: AttendanceService) {}
   @Get()

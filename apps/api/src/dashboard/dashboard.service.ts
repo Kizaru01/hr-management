@@ -1,42 +1,71 @@
 import { Injectable } from '@nestjs/common';
 import { successResponse } from '../common/responses/success-response';
 import { EmployeeRepository } from '../employee/employee.repository';
-import { AttendanceRepository } from '../attendance/attendance.repository';
+import { AttendanceService } from '../attendance/attendance.service';
+import { getWorkDate } from '../attendance/attendance-date';
+import { AnnouncementsRepository } from '../announcements/announcements.repository';
 import { LeaveRepository } from '../leave/leave.repository';
+import { NotificationRepository } from '../notification/notification.repository';
 
 @Injectable()
 export class DashboardService {
   constructor(
     private readonly employeeRepository: EmployeeRepository,
-    private readonly attendanceRepository: AttendanceRepository,
+    private readonly attendanceService: AttendanceService,
     private readonly leaveRepository: LeaveRepository,
+    private readonly announcementsRepository: AnnouncementsRepository,
+    private readonly notificationRepository: NotificationRepository,
   ) {}
 
-  async getHrDashboard() {
+  async getHrDashboard(currentUserId: string) {
+    const workDate = getWorkDate();
+    const date = workDate.toISOString().slice(0, 10);
     const now = new Date();
 
-    const workDate = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-    );
     const [
       totalEmployees,
       activeEmployees,
       inactiveEmployees,
-      attendanceStats,
-      lateEmployees,
-      undertimeEmployees,
-      employeesOnLeave,
+      attendanceToday,
+      unreadNotifications,
+      recentLeaveRequests,
+      pendingLeaveRequests,
+      recentAnnouncements,
+      activeAnnouncements,
     ] = await Promise.all([
       this.employeeRepository.countAll(),
       this.employeeRepository.countByEmploymentStatus('active'),
       this.employeeRepository.countByEmploymentStatus('inactive'),
-      this.attendanceRepository.getDailyStats(workDate),
-      this.attendanceRepository.countLateByDate(workDate),
-      this.attendanceRepository.countUndertimeByDate(workDate),
-      this.leaveRepository.countApprovedForDate(workDate),
-    ]);
 
-    const present = attendanceStats._count.id;
+      this.attendanceService.buildCompanyDailyAttendance(date),
+      this.notificationRepository.countUnreadByUserId(currentUserId),
+
+      this.leaveRepository.findRecent(5),
+      this.leaveRepository.countPending(),
+
+      this.announcementsRepository.findRecent(5),
+      this.announcementsRepository.countActive(now),
+    ]);
+    const recentLeaves = recentLeaveRequests.map((leave) => ({
+      id: leave.id,
+      leaveType: leave.leaveType,
+      startDate: leave.startDate,
+      endDate: leave.endDate,
+      status: leave.status,
+      createdAt: leave.createdAt,
+
+      employee: {
+        id: leave.employee.id,
+        employeeNumber: leave.employee.employeeNumber,
+        name: [
+          leave.employee.firstName,
+          leave.employee.middleName,
+          leave.employee.lastName,
+        ]
+          .filter(Boolean)
+          .join(' '),
+      },
+    }));
 
     return successResponse(
       {
@@ -45,14 +74,17 @@ export class DashboardService {
           active: activeEmployees,
           inactive: inactiveEmployees,
         },
-
-        attendanceToday: {
-          present,
-          late: lateEmployees,
-          undertime: undertimeEmployees,
-          onLeave: employeesOnLeave,
-          totalLateMinutes: attendanceStats._sum.lateMinutes ?? 0,
-          totalUndertimeMinutes: attendanceStats._sum.undertimeMinutes ?? 0,
+        attendanceToday,
+        leaveRequests: {
+          pending: pendingLeaveRequests,
+          recent: recentLeaves,
+        },
+        announcements: {
+          active: activeAnnouncements,
+          recent: recentAnnouncements,
+        },
+        notifications: {
+          unread: unreadNotifications,
         },
       },
       'HR dashboard retrieved successfully.',

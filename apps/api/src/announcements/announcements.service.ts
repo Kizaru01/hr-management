@@ -10,6 +10,7 @@ import { DepartmentRepository } from '../department/department.repository';
 import { BranchRepository } from '../branch/branch.respository';
 import { EmployeeRepository } from '../employee/employee.repository';
 import { NotificationService } from '../notification/notification.service';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class AnnouncementsService {
@@ -19,6 +20,7 @@ export class AnnouncementsService {
     private readonly branchRepository: BranchRepository,
     private readonly employeeRepository: EmployeeRepository,
     private readonly notificationService: NotificationService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async create(currentUserId: string, input: CreateAnnouncementInput) {
@@ -108,6 +110,18 @@ export class AnnouncementsService {
       }));
 
     await this.notificationService.createMany(notifications);
+    await this.auditLogService.create({
+      actorUserId: currentUserId,
+      action: 'announcement.create',
+      entityType: 'Announcement',
+      entityId: announcement.id,
+      metadata: {
+        title: announcement.title,
+        audience: announcement.audience,
+        departmentId: announcement.departmentId,
+        branchId: announcement.branchId,
+      },
+    });
 
     return successResponse(announcement, 'Announcement created successfully.');
   }

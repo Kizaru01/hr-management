@@ -6,12 +6,18 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+import { Roles } from '../auth/decorators/roles.decorator.js';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { BranchService } from './branch.service.js';
 import { CreateBranchDto } from './dto/create-branch.dto.js';
 import { UpdateBranchDto } from './dto/update-branch.dto.js';
 
 @Controller('branches')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin', 'hr')
 export class BranchController {
   constructor(private readonly branchService: BranchService) {}
 

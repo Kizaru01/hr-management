@@ -1,6 +1,7 @@
 import type {
   AssignManagerInput,
   CreateEmployeeInput,
+  TerminateEmployeeInput,
   UpdateEmployeeInput,
   UpdateMyProfileInput,
 } from '@hr-management/validation';
@@ -18,6 +19,8 @@ import { EmployeeRepository } from './employee.repository.js';
 import { BranchRepository } from '../branch/branch.respository.js';
 import { unlink } from 'node:fs/promises';
 import { join } from 'node:path';
+import { AuditLogService } from '../audit-log/audit-log.service.js';
+import { UserRepository } from '../user/user.repository.js';
 
 @Injectable()
 export class EmployeeService {
@@ -26,6 +29,8 @@ export class EmployeeService {
     private readonly departmentRepository: DepartmentRepository,
     private readonly positionRepository: PositionRepository,
     private readonly branchRepository: BranchRepository,
+    private readonly auditLogService: AuditLogService,
+    private readonly userRepository: UserRepository,
   ) {}
 
   async create(input: CreateEmployeeInput) {
@@ -106,7 +111,7 @@ export class EmployeeService {
 
     return successResponse(employees, 'Team retrieved successfully.');
   }
-  async update(id: string, input: UpdateEmployeeInput) {
+  async update(id: string, input: UpdateEmployeeInput, currentUserId: string) {
     const existingEmployee = await this.employeeRepository.findById(id);
 
     if (!existingEmployee) {
@@ -159,10 +164,10 @@ export class EmployeeService {
       }
     }
 
-    try {
-      const employee = await this.employeeRepository.update(id, updateData);
+    let employee: Awaited<ReturnType<EmployeeRepository['update']>>;
 
-      return successResponse(employee, 'Employee updated successfully.');
+    try {
+      employee = await this.employeeRepository.update(id, updateData);
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -182,6 +187,18 @@ export class EmployeeService {
 
       throw error;
     }
+
+    await this.auditLogService.create({
+      actorUserId: currentUserId,
+      action: 'employee.update',
+      entityType: 'Employee',
+      entityId: employee.id,
+      metadata: {
+        changedFields: Object.keys(input),
+      },
+    });
+
+    return successResponse(employee, 'Employee updated successfully.');
   }
   async updateMe(userId: string, input: UpdateMyProfileInput) {
     const employee = await this.employeeRepository.findByUserId(userId);
@@ -298,10 +315,14 @@ export class EmployeeService {
 
     return successResponse(updatedEmployee, 'Avatar removed successfully.');
   }
-  async assignManager(employeeId: string, input: AssignManagerInput) {
-    const employee = await this.employeeRepository.findById(employeeId);
+  async assignManager(
+    employeeId: string,
+    input: AssignManagerInput,
+    currentUserId: string,
+  ) {
+    const existingEmployee = await this.employeeRepository.findById(employeeId);
 
-    if (!employee) {
+    if (!existingEmployee) {
       throw new NotFoundException('Employee not found.');
     }
 
@@ -311,7 +332,7 @@ export class EmployeeService {
       throw new NotFoundException('Manager not found.');
     }
 
-    if (employee.id === manager.id) {
+    if (existingEmployee.id === manager.id) {
       throw new BadRequestException('An employee cannot be their own manager.');
     }
 
@@ -320,11 +341,76 @@ export class EmployeeService {
     }
 
     const updatedEmployee = await this.employeeRepository.assignManager(
-      employee.id,
+      existingEmployee.id,
       manager.id,
     );
 
+    await this.auditLogService.create({
+      actorUserId: currentUserId,
+      action: 'manager.assign',
+      entityType: 'Employee',
+      entityId: existingEmployee.id,
+      metadata: {
+        changes: {
+          managerId: {
+            from: existingEmployee.managerId,
+            to: updatedEmployee.managerId,
+          },
+        },
+      },
+    });
     return successResponse(updatedEmployee, 'Manager assigned successfully.');
+  }
+  async terminate(
+    employeeId: string,
+    currentUserId: string,
+    input: TerminateEmployeeInput,
+  ) {
+    const employee = await this.employeeRepository.findById(employeeId);
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found.');
+    }
+
+    if (employee.employmentStatus === 'terminated') {
+      throw new BadRequestException('Employee is already terminated.');
+    }
+
+    if (input.terminationDate < employee.hireDate) {
+      throw new BadRequestException(
+        'Termination date cannot be before the hire date.',
+      );
+    }
+
+    const terminationReason = input.reason.trim();
+
+    const terminatedEmployee =
+      await this.employeeRepository.terminateWithUserDeactivation(
+        employee.id,
+        employee.userId,
+        input.terminationDate,
+        terminationReason,
+      );
+
+    await this.auditLogService.create({
+      actorUserId: currentUserId,
+      action: 'employee.terminate',
+      entityType: 'Employee',
+      entityId: employee.id,
+
+      metadata: {
+        previousStatus: employee.employmentStatus,
+        newStatus: 'terminated',
+        terminationDate: input.terminationDate.toISOString(),
+        reason: terminationReason,
+        userDeactivated: Boolean(employee.userId),
+      },
+    });
+
+    return successResponse(
+      terminatedEmployee,
+      'Employee terminated successfully.',
+    );
   }
   private async validateDepartmentBranchAndPosition(
     departmentId: string,
