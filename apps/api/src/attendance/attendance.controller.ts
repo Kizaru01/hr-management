@@ -31,7 +31,6 @@ export class AttendanceController {
   }
 
   @Get('daily')
-  @UseGuards(RolesGuard)
   @Roles('admin', 'hr')
   getCompanyDailyAttendance(@Query() query: AttendanceQueryDto) {
     const date = query.date ?? getWorkDate().toISOString().slice(0, 10);
@@ -40,7 +39,6 @@ export class AttendanceController {
   }
 
   @Get('summary')
-  @UseGuards(RolesGuard)
   @Roles('admin', 'hr')
   getCompanySummary(@Query() query: AttendanceQueryDto) {
     const date = query.date ?? getWorkDate().toISOString().slice(0, 10);
@@ -83,6 +81,19 @@ export class AttendanceController {
     @Query() query: AttendanceRangeQueryDto,
   ) {
     return this.attendanceService.getEmployeeSummary(
+      employeeId,
+      query.from,
+      query.to,
+    );
+  }
+
+  @Get('employee/:employeeId')
+  @Roles('admin', 'hr')
+  findEmployeeAttendance(
+    @Param('employeeId') employeeId: string,
+    @Query() query: AttendanceRangeQueryDto,
+  ) {
+    return this.attendanceService.findEmployeeAttendance(
       employeeId,
       query.from,
       query.to,
