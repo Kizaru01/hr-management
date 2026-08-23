@@ -7,9 +7,13 @@ export const updateMyProfileSchema = z.object({
     .min(7, "Phone number must contain at least 7 characters.")
     .max(20, "Phone number must not exceed 20 characters.")
     .optional(),
-  birthDate: z.coerce
-    .date()
-    .max(new Date(), "Birth date cannot be in the future.")
+  birthDate: z.iso
+    .date("Birth date must use YYYY-MM-DD format.")
+    .refine(
+      (birthDate) =>
+        new Date(`${birthDate}T00:00:00.000Z`).getTime() <= Date.now(),
+      "Birth date cannot be in the future.",
+    )
     .optional(),
   gender: z.enum(["male", "female", "other"]).optional(),
   address: z

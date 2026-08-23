@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { apiResponse } from "@/lib/api/authenticated-api";
+import handleError from "@/lib/errors/handle-error";
+
 interface LoginResponse {
   success: boolean;
   message: string;
@@ -13,58 +16,49 @@ interface LoginResponse {
 }
 
 export async function POST(request: Request) {
-  const body: unknown = await request.json();
+  try {
+    const body: unknown = await request.json();
 
-  const apiUrl = process.env.API_URL;
+    const apiUrl = process.env.API_URL;
 
-  if (!apiUrl) {
-    return NextResponse.json(
-      {
-        message: "API_URL is not configured.",
+    if (!apiUrl) {
+      throw new Error("API_URL is not configured.");
+    }
+
+    const response = await fetch(`${apiUrl}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-      {
-        status: 500,
-      },
-    );
-  }
-
-  const response = await fetch(`${apiUrl}/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-    cache: "no-store",
-  });
-
-  const data = (await response.json()) as LoginResponse;
-
-  if (!response.ok) {
-    return NextResponse.json(data, {
-      status: response.status,
+      body: JSON.stringify(body),
+      cache: "no-store",
     });
+
+    const data = await apiResponse<LoginResponse>(response);
+
+    const result = NextResponse.json({
+      success: true,
+      message: data.message,
+      data: {
+        id: data.data.id,
+        email: data.data.email,
+        role: data.data.role,
+        lastLoginAt: data.data.lastLoginAt,
+      },
+    });
+
+    result.cookies.set({
+      name: "access_token",
+      value: data.data.accessToken,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 15 * 60,
+    });
+
+    return result;
+  } catch (error) {
+    return handleError(error, "api");
   }
-
-  const result = NextResponse.json({
-    success: true,
-    message: data.message,
-    data: {
-      id: data.data.id,
-      email: data.data.email,
-      role: data.data.role,
-      lastLoginAt: data.data.lastLoginAt,
-    },
-  });
-
-  result.cookies.set({
-    name: "access_token",
-    value: data.data.accessToken,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 15 * 60,
-  });
-
-  return result;
 }

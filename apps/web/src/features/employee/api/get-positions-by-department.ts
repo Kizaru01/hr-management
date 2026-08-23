@@ -1,3 +1,4 @@
+import { apiClient } from "@/lib/api/api.client";
 import type { ApiResponse } from "@/types/api";
 
 interface PositionLookup {
@@ -6,11 +7,8 @@ interface PositionLookup {
 }
 
 export const getPositionsByDepartment = async (departmentId: string) => {
-  const response = await fetch(`/api/positions?departmentId=${departmentId}`);
-
-  if (!response.ok) {
-    throw new Error("Unable to load positions.");
-  }
-
-  return response.json() as Promise<ApiResponse<PositionLookup[]>>;
+  return apiClient<ApiResponse<PositionLookup[]>>(
+    `/api/positions?departmentId=${departmentId}`,
+    { fallbackMessage: "Unable to load positions." },
+  );
 };

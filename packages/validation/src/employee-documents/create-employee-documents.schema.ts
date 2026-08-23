@@ -4,8 +4,12 @@ export const createEmployeeDocumentSchema = z
   .object({
     title: z.string().trim().min(2, "Document title is required.").max(150),
     type: z.string().trim().min(2, "Document type is required.").max(50),
-    issuedAt: z.coerce.date().optional(),
-    expiresAt: z.coerce.date().optional(),
+    issuedAt: z.iso
+      .date("Issue date must use YYYY-MM-DD format.")
+      .optional(),
+    expiresAt: z.iso
+      .date("Expiration date must use YYYY-MM-DD format.")
+      .optional(),
   })
   .refine(
     (data) =>

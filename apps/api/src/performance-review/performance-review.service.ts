@@ -9,6 +9,7 @@ import { AuthenticatedUser } from '../auth/types/user.type';
 import { successResponse } from '../common/responses/success-response';
 import { EmployeeRepository } from '../employee/employee.repository';
 import { NotificationService } from '../notification/notification.service';
+import { dateOnlyToUtc } from '../common/dates/date-conversion.js';
 
 @Injectable()
 export class PerformanceReviewService {
@@ -41,7 +42,7 @@ export class PerformanceReviewService {
     }
 
     const review = await this.performanceReviewRepository.create({
-      reviewDate: input.reviewDate,
+      reviewDate: dateOnlyToUtc(input.reviewDate),
       rating: input.rating,
       strengths: input.strengths,
       improvements: input.improvements,

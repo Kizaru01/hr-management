@@ -13,6 +13,7 @@ import { successResponse } from '../common/responses/success-response.js';
 import { ShiftRepository } from './shift.repository.js';
 import { EmployeeRepository } from '../employee/employee.repository.js';
 import { EmployeeShiftRepository } from './employee-shift.repository.js';
+import { dateOnlyToUtc } from '../common/dates/date-conversion.js';
 
 @Injectable()
 export class ShiftService {
@@ -101,6 +102,11 @@ export class ShiftService {
   }
 
   async assignToEmployee(employeeId: string, input: AssignShiftInput) {
+    const effectiveFrom = dateOnlyToUtc(input.effectiveFrom);
+    const effectiveTo = input.effectiveTo
+      ? dateOnlyToUtc(input.effectiveTo)
+      : undefined;
+
     const employee = await this.employeeRepository.findById(employeeId);
 
     if (!employee) {
@@ -117,7 +123,7 @@ export class ShiftService {
       throw new BadRequestException('Inactive shifts cannot be assigned.');
     }
 
-    if (input.effectiveTo && input.effectiveTo < input.effectiveFrom) {
+    if (effectiveTo && effectiveTo < effectiveFrom) {
       throw new BadRequestException(
         'Effective end date cannot be before the start date.',
       );
@@ -126,8 +132,8 @@ export class ShiftService {
     const existingSchedule =
       await this.employeeShiftRepository.existingSchedule(
         employee.id,
-        input.effectiveFrom,
-        input.effectiveTo,
+        effectiveFrom,
+        effectiveTo,
       );
 
     if (existingSchedule) {
@@ -148,8 +154,8 @@ export class ShiftService {
         },
       },
       workDays: input.workDays,
-      effectiveFrom: input.effectiveFrom,
-      effectiveTo: input.effectiveTo,
+      effectiveFrom,
+      effectiveTo,
     });
 
     return successResponse(

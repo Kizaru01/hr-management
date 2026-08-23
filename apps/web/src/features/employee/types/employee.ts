@@ -29,7 +29,6 @@ export interface EmployeeDetails extends EmployeeListItem {
   phoneNumber: string | null;
   hireDate: string;
   employmentType: NonNullable<UpdateEmployeeInput["employmentType"]>;
-
   manager: {
     id: string;
     firstName: string;
@@ -40,4 +39,8 @@ export interface EmployeeDetails extends EmployeeListItem {
 export interface LookupOption {
   label: string;
   value: string;
+}
+export interface ManagerOption {
+  id: string;
+  name: string;
 }

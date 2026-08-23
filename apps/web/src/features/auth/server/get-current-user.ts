@@ -1,4 +1,5 @@
-import { cookies } from "next/headers";
+import { authenticatedApi } from "@/lib/api/authenticated-api";
+import { RequestError } from "@/lib/errors/http-errors";
 
 export interface CurrentUser {
   id: string;
@@ -13,33 +14,15 @@ interface CurrentUserResponse {
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const cookieStore = await cookies();
+  try {
+    const result = await authenticatedApi<CurrentUserResponse>("/auth/me");
 
-  const token = cookieStore.get("access_token")?.value;
+    return result.data;
+  } catch (error) {
+    if (error instanceof RequestError) {
+      return null;
+    }
 
-  if (!token) {
-    return null;
+    throw error;
   }
-
-  const apiUrl = process.env.API_URL;
-
-  if (!apiUrl) {
-    throw new Error("API_URL is not configured.");
-  }
-
-  const response = await fetch(`${apiUrl}/auth/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const result = (await response.json()) as CurrentUserResponse;
-
-  return result.data;
 }

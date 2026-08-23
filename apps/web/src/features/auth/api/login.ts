@@ -1,3 +1,4 @@
+import { apiClient } from "@/lib/api/api.client";
 import type { ApiResponse } from "@/types/api";
 
 export interface LoginInput {
@@ -12,22 +13,15 @@ export interface AuthenticatedUser {
   lastLoginAt: string;
 }
 
-export async function login(
+export const login = async (
   input: LoginInput,
-): Promise<ApiResponse<AuthenticatedUser>> {
-  const response = await fetch("/api/auth/login", {
+): Promise<ApiResponse<AuthenticatedUser>> => {
+  return apiClient<ApiResponse<AuthenticatedUser>>("/api/auth/login", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(input),
+    fallbackMessage: "Unable to sign in.",
   });
-
-  const data = (await response.json()) as ApiResponse<AuthenticatedUser>;
-
-  if (!response.ok) {
-    throw new Error(data.message);
-  }
-
-  return data;
-}
+};

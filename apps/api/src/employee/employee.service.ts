@@ -21,6 +21,7 @@ import { unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { AuditLogService } from '../audit-log/audit-log.service.js';
 import { UserRepository } from '../user/user.repository.js';
+import { dateOnlyToUtc } from '../common/dates/date-conversion.js';
 
 @Injectable()
 export class EmployeeService {
@@ -61,6 +62,7 @@ export class EmployeeService {
         ...input,
         email: normalizedEmail,
         employeeNumber,
+        hireDate: dateOnlyToUtc(input.hireDate),
       });
 
       return successResponse(employee, 'Employee created successfully.');
@@ -167,7 +169,14 @@ export class EmployeeService {
     let employee: Awaited<ReturnType<EmployeeRepository['update']>>;
 
     try {
-      employee = await this.employeeRepository.update(id, updateData);
+      const { hireDate, ...persistenceData } = updateData;
+
+      employee = await this.employeeRepository.update(id, {
+        ...persistenceData,
+        ...(hireDate !== undefined && {
+          hireDate: dateOnlyToUtc(hireDate),
+        }),
+      });
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -215,7 +224,7 @@ export class EmployeeService {
         }),
 
         ...(input.birthDate !== undefined && {
-          birthDate: input.birthDate,
+          birthDate: dateOnlyToUtc(input.birthDate),
         }),
 
         ...(input.gender !== undefined && {
@@ -376,7 +385,9 @@ export class EmployeeService {
       throw new BadRequestException('Employee is already terminated.');
     }
 
-    if (input.terminationDate < employee.hireDate) {
+    const terminationDate = dateOnlyToUtc(input.terminationDate);
+
+    if (terminationDate < employee.hireDate) {
       throw new BadRequestException(
         'Termination date cannot be before the hire date.',
       );
@@ -388,7 +399,7 @@ export class EmployeeService {
       await this.employeeRepository.terminateWithUserDeactivation(
         employee.id,
         employee.userId,
-        input.terminationDate,
+        terminationDate,
         terminationReason,
       );
 
@@ -401,7 +412,7 @@ export class EmployeeService {
       metadata: {
         previousStatus: employee.employmentStatus,
         newStatus: 'terminated',
-        terminationDate: input.terminationDate.toISOString(),
+        terminationDate: terminationDate.toISOString(),
         reason: terminationReason,
         userDeactivated: Boolean(employee.userId),
       },
