@@ -10,6 +10,7 @@ import { successResponse } from '../common/responses/success-response';
 import { EmployeeDocumentRepository } from './employee-document.repository';
 import { NotificationService } from '../notification/notification.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { dateOnlyToUtc } from '../common/dates/date-conversion.js';
 
 @Injectable()
 export class EmployeeDocumentService {
@@ -47,8 +48,8 @@ export class EmployeeDocumentService {
       title: input.title.trim(),
       type: input.type.trim(),
       fileUrl,
-      issuedAt: input.issuedAt,
-      expiresAt: input.expiresAt,
+      issuedAt: input.issuedAt ? dateOnlyToUtc(input.issuedAt) : undefined,
+      expiresAt: input.expiresAt ? dateOnlyToUtc(input.expiresAt) : undefined,
 
       employee: {
         connect: {

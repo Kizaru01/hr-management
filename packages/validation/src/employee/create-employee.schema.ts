@@ -10,7 +10,7 @@ export const createEmployeeSchema = z.object({
 
   email: z.string().trim().email("Please enter a valid email address."),
 
-  hireDate: z.coerce.date(),
+  hireDate: z.iso.date("Hire date must use YYYY-MM-DD format."),
 
   departmentId: z.string().trim().min(1, "Department is required."),
 

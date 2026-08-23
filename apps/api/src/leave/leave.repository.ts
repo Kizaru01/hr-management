@@ -94,6 +94,11 @@ export class LeaveRepository {
           gte: workDate,
         },
       },
+      select: {
+        id: true,
+        employeeId: true,
+        leaveType: true,
+      },
     });
   }
   findByManagerId(managerId: string) {

@@ -11,6 +11,7 @@ import { BranchRepository } from '../branch/branch.respository';
 import { EmployeeRepository } from '../employee/employee.repository';
 import { NotificationService } from '../notification/notification.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { isoDateTimeToDate } from '../common/dates/date-conversion.js';
 
 @Injectable()
 export class AnnouncementsService {
@@ -67,7 +68,9 @@ export class AnnouncementsService {
       title: input.title.trim(),
       content: input.content.trim(),
       audience: input.audience,
-      expiresAt: input.expiresAt,
+      expiresAt: input.expiresAt
+        ? isoDateTimeToDate(input.expiresAt)
+        : undefined,
 
       createdBy: {
         connect: {

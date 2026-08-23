@@ -11,12 +11,14 @@ import {
 } from '@hr-management/validation';
 import { successResponse } from '../common/responses/success-response';
 import { Prisma } from '../generated/prisma/client.js';
+import { dateOnlyToUtc } from '../common/dates/date-conversion.js';
 
 @Injectable()
 export class HolidayService {
   constructor(private readonly holidayRepository: HolidayRepository) {}
   async create(input: CreateHolidayInput) {
-    const existingHoliday = await this.holidayRepository.findByDate(input.date);
+    const date = dateOnlyToUtc(input.date);
+    const existingHoliday = await this.holidayRepository.findByDate(date);
 
     if (existingHoliday) {
       throw new ConflictException('A holiday already exists on this date.');
@@ -25,7 +27,7 @@ export class HolidayService {
     try {
       const holiday = await this.holidayRepository.create({
         name: input.name.trim(),
-        date: input.date,
+        date,
       });
 
       return successResponse(holiday, 'Holiday created successfully.');
@@ -63,7 +65,10 @@ export class HolidayService {
       throw new NotFoundException('Holiday not found.');
     }
 
-    const nextDate = input.date ?? existingHoliday.date;
+    const nextDate =
+      input.date !== undefined
+        ? dateOnlyToUtc(input.date)
+        : existingHoliday.date;
 
     if (input.date !== undefined) {
       const duplicate = await this.holidayRepository.findByDate(nextDate);
@@ -75,6 +80,9 @@ export class HolidayService {
 
     const holiday = await this.holidayRepository.update(id, {
       ...input,
+      ...(input.date !== undefined && {
+        date: nextDate,
+      }),
       ...(input.name !== undefined && {
         name: input.name.trim(),
       }),

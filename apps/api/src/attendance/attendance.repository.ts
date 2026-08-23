@@ -42,6 +42,13 @@ export class AttendanceRepository {
       where: {
         workDate,
       },
+      select: {
+        employeeId: true,
+        checkInAt: true,
+        checkOutAt: true,
+        lateMinutes: true,
+        undertimeMinutes: true,
+      },
     });
   }
   findByEmployeeAndDateRange(employeeId: string, from: Date, to: Date) {

@@ -1,14 +1,21 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
+import Link from "next/link";
+import { AssignManagerDialog } from "./assign-manager-dialog";
+import type { ManagerOption } from "../types/employee";
+import { TerminateEmployeeDialog } from "./terminate-dialog";
 
-interface EmployeeActionsProps {
+interface Props {
   employeeId: string;
+  managerOptions: ManagerOption[];
+  employmentStatus: string;
 }
 
 export const EmployeeActions = ({
   employeeId,
-}: EmployeeActionsProps) => (
+  managerOptions,
+  employmentStatus,
+}: Props) => (
   <div className="flex gap-2">
     <Link
       href={`/employees/${employeeId}/edit`}
@@ -16,13 +23,9 @@ export const EmployeeActions = ({
     >
       Edit
     </Link>
-
-    <button className="rounded-md border px-3 py-2 text-sm">
-      Assign Manager
-    </button>
-
-    <button className="rounded-md border px-3 py-2 text-sm">
-      Terminate
-    </button>
+    <AssignManagerDialog employeeId={employeeId} options={managerOptions} />{" "}
+    {employmentStatus !== "terminated" && (
+      <TerminateEmployeeDialog employeeId={employeeId} />
+    )}
   </div>
 );

@@ -7,6 +7,19 @@ import type {
 import { PrismaService } from '../prisma/prisma.service.js';
 import { Prisma } from '../generated/prisma/client.js';
 
+type CreateEmployeeData = Omit<CreateEmployeeInput, 'hireDate'> & {
+  employeeNumber: string;
+  hireDate: Date;
+};
+
+type UpdateEmployeeData = Omit<UpdateEmployeeInput, 'hireDate'> & {
+  hireDate?: Date;
+};
+
+type UpdateMyProfileData = Omit<UpdateMyProfileInput, 'birthDate'> & {
+  birthDate?: Date;
+};
+
 const workProfileSelect = {
   id: true,
   employeeNumber: true,
@@ -46,11 +59,7 @@ const workProfileSelect = {
 export class EmployeeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(
-    input: CreateEmployeeInput & {
-      employeeNumber: string;
-    },
-  ) {
+  create(input: CreateEmployeeData) {
     return this.prisma.employee.create({
       data: input,
       include: {
@@ -125,13 +134,13 @@ export class EmployeeRepository {
       where: { employeeNumber },
     });
   }
-  update(id: string, input: UpdateEmployeeInput) {
+  update(id: string, input: UpdateEmployeeData) {
     return this.prisma.employee.update({
       where: { id },
       data: input,
     });
   }
-  updateByUserId(userId: string, input: UpdateMyProfileInput) {
+  updateByUserId(userId: string, input: UpdateMyProfileData) {
     return this.prisma.employee.update({
       where: {
         userId,

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createPerformanceReviewSchema = z.object({
-  reviewDate: z.coerce.date(),
+  reviewDate: z.iso.date("Review date must use YYYY-MM-DD format."),
   rating: z
     .number()
     .int()

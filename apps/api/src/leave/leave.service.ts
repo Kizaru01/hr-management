@@ -10,6 +10,7 @@ import { successResponse } from '../common/responses/success-response';
 import { LeaveRepository } from './leave.repository';
 import { NotificationService } from '../notification/notification.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
+import { dateOnlyToUtc } from '../common/dates/date-conversion.js';
 
 @Injectable()
 export class LeaveService {
@@ -34,8 +35,8 @@ export class LeaveService {
       },
       leaveType: input.leaveType,
       reason: input.reason,
-      startDate: input.startDate,
-      endDate: input.endDate,
+      startDate: dateOnlyToUtc(input.startDate),
+      endDate: dateOnlyToUtc(input.endDate),
     });
 
     return successResponse(leave, 'Leave request submitted successfully.');

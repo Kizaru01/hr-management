@@ -3,6 +3,7 @@ import { NestFactory } from '@nestjs/core';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppModule } from './app.module';
 import { GlobalErrorFilter } from './common/filters/globalError.filter';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
@@ -14,6 +15,16 @@ async function bootstrap(): Promise<void> {
 
   app.useGlobalPipes(new ZodValidationPipe());
   app.useGlobalFilters(new GlobalErrorFilter());
+  const config = new DocumentBuilder()
+    .setTitle('HR Management API')
+    .setDescription('HR Management backend API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+
+  SwaggerModule.setup('docs', app, document);
 
   await app.listen(port);
 }

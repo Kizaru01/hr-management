@@ -18,9 +18,13 @@ export const assignShiftSchema = z
       .array(weekdaySchema)
       .min(1, "At least one work day is required."),
 
-    effectiveFrom: z.coerce.date(),
+    effectiveFrom: z.iso.date(
+      "Effective start date must use YYYY-MM-DD format.",
+    ),
 
-    effectiveTo: z.coerce.date().optional(),
+    effectiveTo: z.iso
+      .date("Effective end date must use YYYY-MM-DD format.")
+      .optional(),
   })
   .refine(
     (data) => !data.effectiveTo || data.effectiveTo >= data.effectiveFrom,
