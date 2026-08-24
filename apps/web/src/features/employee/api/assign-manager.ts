@@ -1,14 +1,17 @@
-export const assignManager = async (employeeId: string, managerId: string) => {
-  const response = await fetch(`/api/employees/${employeeId}/manager`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ managerId }),
-  });
+import type { AssignManagerInput } from "@hr-management/validation";
+import { apiClient } from "@/lib/api/api.client";
 
-  if (!response.ok) {
-    const { error } = await response.json();
-    throw new Error(error.message);
-  }
-
-  return response.json();
+export const assignManager = async (
+  employeeId: string,
+  managerId: AssignManagerInput["managerId"],
+): Promise<void> => {
+  await apiClient(
+    `/api/employees/${encodeURIComponent(employeeId)}/manager`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ managerId }),
+      fallbackMessage: "Unable to assign manager.",
+    },
+  );
 };

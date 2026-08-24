@@ -47,10 +47,8 @@ export const apiClient = async <T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<T> => {
-  const {
-    fallbackMessage = "Something went wrong.",
-    ...requestOptions
-  } = options;
+  const { fallbackMessage = "Something went wrong.", ...requestOptions } =
+    options;
   const response = await fetch(path, requestOptions);
 
   return parseApiResponse<T>(response, fallbackMessage);

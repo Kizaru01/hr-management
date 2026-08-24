@@ -1,10 +1,6 @@
+import type { LoginInput } from "@hr-management/validation";
 import { apiClient } from "@/lib/api/api.client";
 import type { ApiResponse } from "@/types/api";
-
-export interface LoginInput {
-  email: string;
-  password: string;
-}
 
 export interface AuthenticatedUser {
   id: string;
