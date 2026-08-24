@@ -1,4 +1,8 @@
-import type { LeaveStatus, LeaveType } from "../types/leave";
+import type {
+  LeaveStatus,
+  LeaveType,
+  ManagedLeaveRequest,
+} from "../types/leave";
 
 export const leaveTypeLabels: Record<LeaveType, string> = {
   vacation: "Vacation",
@@ -41,3 +45,10 @@ export const formatLeaveDateRange = (startDate: string, endDate: string) =>
 
 export const formatLeaveRequestedAt = (value: string) =>
   requestedAtFormatter.format(new Date(value));
+
+export const formatLeaveEmployeeName = (
+  employee: ManagedLeaveRequest["employee"],
+) =>
+  [employee.firstName, employee.middleName, employee.lastName]
+    .filter(Boolean)
+    .join(" ");

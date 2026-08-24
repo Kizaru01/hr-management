@@ -19,4 +19,22 @@ export interface EmployeeLeaveRequest {
   createdAt: string;
 }
 
+export interface ManagedLeaveRequest extends EmployeeLeaveRequest {
+  employee: {
+    id: string;
+    employeeNumber: string;
+    firstName: string;
+    middleName: string | null;
+    lastName: string;
+  };
+}
+
+export interface LeaveDecision<
+  TStatus extends "approved" | "rejected",
+> {
+  id: string;
+  status: TStatus;
+  remarks: string | null;
+}
+
 export type CreateEmployeeLeaveInput = CreateLeaveInput;
