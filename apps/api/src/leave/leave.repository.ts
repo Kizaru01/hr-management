@@ -2,6 +2,26 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '../generated/prisma/client';
 
+const managedLeaveSelect = {
+  id: true,
+  employee: {
+    select: {
+      id: true,
+      employeeNumber: true,
+      firstName: true,
+      middleName: true,
+      lastName: true,
+    },
+  },
+  leaveType: true,
+  reason: true,
+  startDate: true,
+  endDate: true,
+  status: true,
+  remarks: true,
+  createdAt: true,
+} satisfies Prisma.LeaveRequestSelect;
+
 @Injectable()
 export class LeaveRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -48,6 +68,7 @@ export class LeaveRepository {
   }
   findAll() {
     return this.prisma.leaveRequest.findMany({
+      select: managedLeaveSelect,
       orderBy: {
         createdAt: 'desc',
       },
@@ -108,6 +129,7 @@ export class LeaveRepository {
           managerId,
         },
       },
+      select: managedLeaveSelect,
       orderBy: {
         createdAt: 'desc',
       },
