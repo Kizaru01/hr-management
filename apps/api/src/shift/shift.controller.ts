@@ -7,6 +7,7 @@ import {
   Patch,
   Param,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
@@ -15,6 +16,7 @@ import { ShiftService } from './shift.service.js';
 import { UpdateShiftDto } from './dto/update-shift.dto.js';
 import { AssignShiftDto } from './dto/assign-shift.dto.js';
 
+@ApiBearerAuth()
 @Controller('shift')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin', 'hr')

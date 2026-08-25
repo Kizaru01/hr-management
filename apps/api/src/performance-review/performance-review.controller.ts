@@ -1,4 +1,5 @@
 import { Body, Controller, Param, Post, UseGuards, Get } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import type { AuthenticatedUser } from '../auth/types/user.type';
@@ -7,6 +8,7 @@ import { PerformanceReviewService } from './performance-review.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
+@ApiBearerAuth()
 @Controller('employee')
 @UseGuards(JwtAuthGuard)
 export class PerformanceReviewController {

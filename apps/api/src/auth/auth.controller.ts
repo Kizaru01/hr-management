@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service.js';
 import { ActivateAccountDto } from './dto/create-activate.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -20,6 +21,7 @@ export class AuthController {
     return this.authService.login(input);
   }
   @Get('me')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: AuthenticatedUser) {
     return successResponse(user, 'Current user retrieved successfully.');

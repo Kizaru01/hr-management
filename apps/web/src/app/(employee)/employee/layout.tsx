@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/features/auth/server/get-current-user';
 
@@ -18,5 +19,21 @@ if (user.role !== 'employee') {
   redirect('/dashboard');
 }
 
-  return <>{children}</>;
+  return (
+    <>
+      <nav
+        aria-label="Employee navigation"
+        className="flex justify-end border-b bg-background px-4 py-3 sm:px-6 lg:px-8"
+      >
+        <Link
+          href="/employee/notifications"
+          className="rounded-md border px-3 py-2 text-sm"
+        >
+          Notifications
+        </Link>
+      </nav>
+
+      {children}
+    </>
+  );
 }

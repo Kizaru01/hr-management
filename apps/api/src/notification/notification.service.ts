@@ -1,11 +1,16 @@
 import {
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { NotificationRepository } from './notification.repository.js';
 import { successResponse } from '../common/responses/success-response.js';
 import type { NotificationType } from '../generated/prisma/client.js';
+import {
+  mapNotification,
+  mapNotificationReadResult,
+} from './notification.mapper.js';
 
 interface CreateNotificationInput {
   userId: string;
@@ -50,11 +55,9 @@ export class NotificationService {
   async findMine(userId: string) {
     const notifications =
       await this.notificationRepository.findByUserId(userId);
+    const data = notifications.map(mapNotification);
 
-    return successResponse(
-      notifications,
-      'Notifications retrieved successfully.',
-    );
+    return successResponse(data, 'Notifications retrieved successfully.');
   }
 
   async markAsRead(notificationId: string, currentUserId: string) {
@@ -72,14 +75,38 @@ export class NotificationService {
     }
 
     if (notification.isRead) {
-      return successResponse(notification, 'Notification already read.');
+      if (!notification.readAt) {
+        throw new InternalServerErrorException(
+          'Read notification is missing its read timestamp.',
+        );
+      }
+
+      return successResponse(
+        mapNotificationReadResult({
+          id: notification.id,
+          readAt: notification.readAt,
+        }),
+        'Notification already read.',
+      );
     }
 
     const updatedNotification = await this.notificationRepository.markAsRead(
       notification.id,
     );
 
-    return successResponse(updatedNotification, 'Notification marked as read.');
+    if (!updatedNotification.readAt) {
+      throw new InternalServerErrorException(
+        'Read notification is missing its read timestamp.',
+      );
+    }
+
+    return successResponse(
+      mapNotificationReadResult({
+        id: updatedNotification.id,
+        readAt: updatedNotification.readAt,
+      }),
+      'Notification marked as read.',
+    );
   }
   async getUnreadCount(userId: string) {
     const count = await this.notificationRepository.countUnreadByUserId(userId);

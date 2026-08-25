@@ -12,6 +12,10 @@ import { EmployeeRepository } from '../employee/employee.repository';
 import { NotificationService } from '../notification/notification.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { isoDateTimeToDate } from '../common/dates/date-conversion.js';
+import {
+  mapActiveAnnouncement,
+  mapManagedAnnouncement,
+} from './announcement.mapper.js';
 
 @Injectable()
 export class AnnouncementsService {
@@ -126,7 +130,10 @@ export class AnnouncementsService {
       },
     });
 
-    return successResponse(announcement, 'Announcement created successfully.');
+    return successResponse(
+      { id: announcement.id },
+      'Announcement created successfully.',
+    );
   }
 
   async findActive(currentUserId: string) {
@@ -143,28 +150,7 @@ export class AnnouncementsService {
         employee.branchId,
       );
 
-    const data = announcements.map((announcement) => {
-      const employeeProfile = announcement.createdBy.employee;
-
-      const name = employeeProfile
-        ? [
-            employeeProfile.firstName,
-            employeeProfile.middleName,
-            employeeProfile.lastName,
-          ]
-            .filter(Boolean)
-            .join(' ')
-        : 'Management';
-
-      return {
-        ...announcement,
-
-        createdBy: {
-          id: announcement.createdBy.id,
-          name,
-        },
-      };
-    });
+    const data = announcements.map(mapActiveAnnouncement);
 
     return successResponse(data, 'Announcements retrieved successfully.');
   }
@@ -172,26 +158,7 @@ export class AnnouncementsService {
     const announcements =
       await this.announcementsRepository.findAllForManagement();
 
-    const data = announcements.map((announcement) => {
-      const employee = announcement.createdBy.employee;
-
-      const name = employee
-        ? [employee.firstName, employee.middleName, employee.lastName]
-            .filter(Boolean)
-            .join(' ')
-        : announcement.createdBy.email;
-
-      return {
-        ...announcement,
-
-        createdBy: {
-          id: announcement.createdBy.id,
-          email: announcement.createdBy.email,
-          role: announcement.createdBy.role,
-          name,
-        },
-      };
-    });
+    const data = announcements.map(mapManagedAnnouncement);
 
     return successResponse(data, 'Announcements retrieved successfully.');
   }

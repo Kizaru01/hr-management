@@ -1,4 +1,4 @@
-import { getUnreadCount } from "@/features/notification/server/get-unread-count";
+import { getUnreadNotificationCount } from "@/features/notification/server/get-unread-count";
 import { HrSidebar } from "@/features/layout/components/hr-sidebar";
 import { HrHeader } from "@/features/layout/components/hr-header";
 import { getCurrentUser } from "@/features/auth/server/get-current-user";
@@ -19,7 +19,7 @@ export default async function HrLayout({ children }: HrLayoutProps) {
     redirect("/employee/dashboard");
   }
 
-  const notificationResponse = await getUnreadCount();
+  const notificationResponse = await getUnreadNotificationCount();
 
   return (
     <div className="min-h-screen bg-background">

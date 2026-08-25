@@ -17,6 +17,17 @@ export class NotificationRepository {
       where: {
         userId,
       },
+      select: {
+        id: true,
+        title: true,
+        message: true,
+        type: true,
+        resourceId: true,
+        resourceType: true,
+        isRead: true,
+        readAt: true,
+        createdAt: true,
+      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -27,6 +38,12 @@ export class NotificationRepository {
     return this.prisma.notification.findUnique({
       where: {
         id,
+      },
+      select: {
+        id: true,
+        userId: true,
+        isRead: true,
+        readAt: true,
       },
     });
   }
@@ -39,6 +56,10 @@ export class NotificationRepository {
       data: {
         isRead: true,
         readAt: new Date(),
+      },
+      select: {
+        id: true,
+        readAt: true,
       },
     });
   }

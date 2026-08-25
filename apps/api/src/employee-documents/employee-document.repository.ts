@@ -9,6 +9,11 @@ export class EmployeeDocumentRepository {
   create(data: Prisma.EmployeeDocumentCreateInput) {
     return this.prisma.employeeDocument.create({
       data,
+      select: {
+        id: true,
+        title: true,
+        type: true,
+      },
     });
   }
 
@@ -16,6 +21,12 @@ export class EmployeeDocumentRepository {
     return this.prisma.employeeDocument.findUnique({
       where: {
         id,
+      },
+      select: {
+        id: true,
+        employeeId: true,
+        fileUrl: true,
+        isActive: true,
       },
     });
   }
@@ -26,6 +37,14 @@ export class EmployeeDocumentRepository {
         employeeId,
         isActive: true,
       },
+      select: {
+        id: true,
+        title: true,
+        type: true,
+        issuedAt: true,
+        expiresAt: true,
+        createdAt: true,
+      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -35,6 +54,10 @@ export class EmployeeDocumentRepository {
     return this.prisma.employeeDocument.update({
       where: { id },
       data,
+      select: {
+        id: true,
+        isActive: true,
+      },
     });
   }
 }

@@ -2,6 +2,44 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
+const announcementListSelect = {
+  id: true,
+  title: true,
+  content: true,
+  audience: true,
+  publishedAt: true,
+  expiresAt: true,
+  createdBy: {
+    select: {
+      id: true,
+      employee: {
+        select: {
+          firstName: true,
+          middleName: true,
+          lastName: true,
+        },
+      },
+    },
+  },
+  department: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  branch: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+} satisfies Prisma.AnnouncementSelect;
+
+const managedAnnouncementSelect = {
+  ...announcementListSelect,
+  isActive: true,
+} satisfies Prisma.AnnouncementSelect;
+
 @Injectable()
 export class AnnouncementsRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -9,14 +47,12 @@ export class AnnouncementsRepository {
   create(data: Prisma.AnnouncementCreateInput) {
     return this.prisma.announcement.create({
       data,
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            email: true,
-            role: true,
-          },
-        },
+      select: {
+        id: true,
+        title: true,
+        audience: true,
+        departmentId: true,
+        branchId: true,
       },
     });
   }
@@ -122,37 +158,7 @@ export class AnnouncementsRepository {
         ],
       },
 
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            email: true,
-            role: true,
-
-            employee: {
-              select: {
-                firstName: true,
-                middleName: true,
-                lastName: true,
-              },
-            },
-          },
-        },
-
-        department: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-
-        branch: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
+      select: announcementListSelect,
 
       orderBy: {
         publishedAt: 'desc',
@@ -161,37 +167,7 @@ export class AnnouncementsRepository {
   }
   findAllForManagement() {
     return this.prisma.announcement.findMany({
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            email: true,
-            role: true,
-            employee: {
-              select: {
-                firstName: true,
-                middleName: true,
-                lastName: true,
-              },
-            },
-          },
-        },
-
-        department: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-
-        branch: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-
+      select: managedAnnouncementSelect,
       orderBy: {
         createdAt: 'desc',
       },

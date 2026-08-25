@@ -10,7 +10,12 @@ export class BranchRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.prisma.branch.findMany();
+    return this.prisma.branch.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
   }
 
   findById(id: string) {

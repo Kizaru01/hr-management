@@ -1,4 +1,5 @@
 import { Controller, Post, UseGuards, Get, Query, Param } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { AttendanceService } from './attendance.service.js';
@@ -9,6 +10,7 @@ import { AttendanceQueryDto } from './dto/attendance-query.dto.js';
 import { getWorkDate } from './attendance-date.js';
 import { AttendanceRangeQueryDto } from './dto/attendance-range-query.dto.js';
 
+@ApiBearerAuth()
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AttendanceController {

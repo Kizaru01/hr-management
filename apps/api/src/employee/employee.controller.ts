@@ -13,6 +13,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { CreateEmployeeDto } from './dto/create-employee.dto.js';
 import { UpdateEmployeeDto } from './dto/update-employee.dto.js';
 import { EmployeeService } from './employee.service';
@@ -28,6 +29,7 @@ import { diskStorage } from 'multer';
 import { extname } from 'node:path';
 import { TerminateEmployeeDto } from './dto/create-termination.dto.js';
 
+@ApiBearerAuth()
 @Controller('employees')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class EmployeeController {
