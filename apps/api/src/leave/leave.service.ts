@@ -11,6 +11,9 @@ import { LeaveRepository } from './leave.repository';
 import { NotificationService } from '../notification/notification.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { dateOnlyToUtc } from '../common/dates/date-conversion.js';
+import { mapEmployeeLeave, mapManagedLeave } from './leave.mapper.js';
+import { getWorkDate } from '../attendance/attendance-date.js';
+import { getLeaveFilingPolicyError } from './leave-filing-policy.js';
 
 @Injectable()
 export class LeaveService {
@@ -27,6 +30,17 @@ export class LeaveService {
       throw new NotFoundException('Employee not found.');
     }
 
+    const startDate = dateOnlyToUtc(input.startDate);
+    const filingPolicyError = getLeaveFilingPolicyError(
+      input.leaveType,
+      startDate,
+      getWorkDate(),
+    );
+
+    if (filingPolicyError) {
+      throw new BadRequestException(filingPolicyError);
+    }
+
     const leave = await this.leaveRepository.create({
       employee: {
         connect: {
@@ -35,11 +49,14 @@ export class LeaveService {
       },
       leaveType: input.leaveType,
       reason: input.reason,
-      startDate: dateOnlyToUtc(input.startDate),
+      startDate,
       endDate: dateOnlyToUtc(input.endDate),
     });
 
-    return successResponse(leave, 'Leave request submitted successfully.');
+    return successResponse(
+      mapEmployeeLeave(leave),
+      'Leave request submitted successfully.',
+    );
   }
   async findMine(userId: string) {
     const employee = await this.employeeRepository.findByUserId(userId);
@@ -50,12 +67,18 @@ export class LeaveService {
 
     const leaves = await this.leaveRepository.findByEmployeeId(employee.id);
 
-    return successResponse(leaves, 'Leave requests retrieved successfully.');
+    return successResponse(
+      leaves.map(mapEmployeeLeave),
+      'Leave requests retrieved successfully.',
+    );
   }
   async findAll() {
     const leaves = await this.leaveRepository.findAll();
 
-    return successResponse(leaves, 'Leave requests retrieved successfully.');
+    return successResponse(
+      leaves.map(mapManagedLeave),
+      'Leave requests retrieved successfully.',
+    );
   }
   async approve(
     leaveRequestId: string,
@@ -118,7 +141,11 @@ export class LeaveService {
       },
     });
     return successResponse(
-      approvedLeave,
+      {
+        id: approvedLeave.id,
+        status: approvedLeave.status,
+        remarks: approvedLeave.remarks,
+      },
       'Leave request approved successfully.',
     );
   }
@@ -186,7 +213,11 @@ export class LeaveService {
     });
 
     return successResponse(
-      rejectedLeave,
+      {
+        id: rejectedLeave.id,
+        status: rejectedLeave.status,
+        remarks: rejectedLeave.remarks,
+      },
       'Leave request rejected successfully.',
     );
   }
@@ -244,7 +275,7 @@ export class LeaveService {
     }
 
     return successResponse(
-      cancelledLeave,
+      mapEmployeeLeave(cancelledLeave),
       'Leave request cancelled successfully.',
     );
   }
@@ -258,7 +289,7 @@ export class LeaveService {
     const leaves = await this.leaveRepository.findByManagerId(manager.id);
 
     return successResponse(
-      leaves,
+      leaves.map(mapManagedLeave),
       'Team leave requests retrieved successfully.',
     );
   }

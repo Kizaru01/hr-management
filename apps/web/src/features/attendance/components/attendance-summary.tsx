@@ -5,16 +5,19 @@ interface Props {
 }
 
 const items = [
+  ["Total Employees", "totalEmployees"],
   ["Present", "present"],
   ["On Time", "onTime"],
   ["Late", "late"],
+  ["Undertime", "undertime"],
   ["Absent", "absent"],
   ["On Leave", "onLeave"],
   ["Rest Days", "restDays"],
+  ["Scheduled", "scheduled"],
 ] as const;
 
 export const AttendanceSummary = ({ attendance }: Props) => (
-  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
     {items.map(([label, key]) => (
       <div key={key} className="rounded-xl border p-4">
         <p className="text-sm text-muted-foreground">{label}</p>

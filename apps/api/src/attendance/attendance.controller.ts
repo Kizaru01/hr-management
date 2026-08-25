@@ -1,4 +1,5 @@
 import { Controller, Post, UseGuards, Get, Query, Param } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { AttendanceService } from './attendance.service.js';
@@ -9,6 +10,7 @@ import { AttendanceQueryDto } from './dto/attendance-query.dto.js';
 import { getWorkDate } from './attendance-date.js';
 import { AttendanceRangeQueryDto } from './dto/attendance-range-query.dto.js';
 
+@ApiBearerAuth()
 @Controller('attendance')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class AttendanceController {
@@ -31,7 +33,6 @@ export class AttendanceController {
   }
 
   @Get('daily')
-  @UseGuards(RolesGuard)
   @Roles('admin', 'hr')
   getCompanyDailyAttendance(@Query() query: AttendanceQueryDto) {
     const date = query.date ?? getWorkDate().toISOString().slice(0, 10);
@@ -40,7 +41,6 @@ export class AttendanceController {
   }
 
   @Get('summary')
-  @UseGuards(RolesGuard)
   @Roles('admin', 'hr')
   getCompanySummary(@Query() query: AttendanceQueryDto) {
     const date = query.date ?? getWorkDate().toISOString().slice(0, 10);
@@ -83,6 +83,19 @@ export class AttendanceController {
     @Query() query: AttendanceRangeQueryDto,
   ) {
     return this.attendanceService.getEmployeeSummary(
+      employeeId,
+      query.from,
+      query.to,
+    );
+  }
+
+  @Get('employee/:employeeId')
+  @Roles('admin', 'hr')
+  findEmployeeAttendance(
+    @Param('employeeId') employeeId: string,
+    @Query() query: AttendanceRangeQueryDto,
+  ) {
+    return this.attendanceService.findEmployeeAttendance(
       employeeId,
       query.from,
       query.to,

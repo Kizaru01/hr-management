@@ -1,5 +1,6 @@
 'use client';
 
+import Link from "next/link";
 import { CurrentUser } from "@/features/auth/server/get-current-user";
 
 interface HrHeaderProps {
@@ -23,8 +24,8 @@ export const HrHeader = ({
         </p>
       </div>
 
-      <button
-        type="button"
+      <Link
+        href="/notifications"
         className="relative rounded-md border px-3 py-2 text-sm"
       >
         Notifications
@@ -34,7 +35,7 @@ export const HrHeader = ({
             {unreadCount}
           </span>
         )}
-      </button>
+      </Link>
     </header>
   );
 };

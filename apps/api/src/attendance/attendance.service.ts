@@ -51,15 +51,15 @@ export class AttendanceService {
       throw new ConflictException('You have already checked in today.');
     }
 
-    const [assignment, approvedLeave] = await Promise.all([
+    const [assignment, holiday, approvedLeave] = await Promise.all([
       this.employeeShiftRepository.findActiveAssignment(employee.id, workDate),
-      // this.holidayRepository.findByDate(workDate),
+      this.holidayRepository.findByDate(workDate),
       this.leaveRepository.findApprovedForDate(employee.id, workDate),
     ]);
 
-    // if (holiday?.isActive) {
-    //   throw new BadRequestException('You cannot check in on a holiday.');
-    // }
+    if (holiday?.isActive) {
+      throw new BadRequestException('You cannot check in on a holiday.');
+    }
 
     if (!assignment) {
       throw new BadRequestException('No active shift is assigned for today.');
@@ -99,7 +99,21 @@ export class AttendanceService {
         lateMinutes,
       });
 
-      return successResponse(attendance, 'Checked in successfully.');
+      return successResponse(
+        {
+          workDate: attendance.workDate,
+          checkInAt: attendance.checkInAt,
+          checkOutAt: attendance.checkOutAt,
+          lateMinutes: attendance.lateMinutes,
+          undertimeMinutes: attendance.undertimeMinutes,
+          status: getAttendanceStatus({
+            checkOutAt: attendance.checkOutAt,
+            lateMinutes: attendance.lateMinutes,
+            undertimeMinutes: attendance.undertimeMinutes,
+          }),
+        },
+        'Checked in successfully.',
+      );
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -193,7 +207,21 @@ export class AttendanceService {
       },
     );
 
-    return successResponse(updatedAttendance, 'Checked out successfully.');
+    return successResponse(
+      {
+        workDate: updatedAttendance.workDate,
+        checkInAt: updatedAttendance.checkInAt,
+        checkOutAt: updatedAttendance.checkOutAt,
+        lateMinutes: updatedAttendance.lateMinutes,
+        undertimeMinutes: updatedAttendance.undertimeMinutes,
+        status: getAttendanceStatus({
+          checkOutAt: updatedAttendance.checkOutAt,
+          lateMinutes: updatedAttendance.lateMinutes,
+          undertimeMinutes: updatedAttendance.undertimeMinutes,
+        }),
+      },
+      'Checked out successfully.',
+    );
   }
   async findMine(userId: string, from?: string, to?: string) {
     const employee = await this.employeeRepository.findByUserId(userId);
@@ -217,8 +245,11 @@ export class AttendanceService {
         : await this.attendanceRepository.findByEmployeeId(employee.id);
 
     const data = attendances.map((attendance) => ({
-      ...attendance,
-
+      workDate: attendance.workDate,
+      checkInAt: attendance.checkInAt,
+      checkOutAt: attendance.checkOutAt,
+      lateMinutes: attendance.lateMinutes,
+      undertimeMinutes: attendance.undertimeMinutes,
       status: getAttendanceStatus({
         checkOutAt: attendance.checkOutAt,
         lateMinutes: attendance.lateMinutes,
@@ -237,7 +268,11 @@ export class AttendanceService {
       await this.attendanceRepository.findAllByWorkDate(workDate);
 
     const data = attendances.map((attendance) => ({
-      ...attendance,
+      workDate: attendance.workDate,
+      checkInAt: attendance.checkInAt,
+      checkOutAt: attendance.checkOutAt,
+      lateMinutes: attendance.lateMinutes,
+      undertimeMinutes: attendance.undertimeMinutes,
       status: getAttendanceStatus({
         checkOutAt: attendance.checkOutAt,
         lateMinutes: attendance.lateMinutes,
@@ -304,7 +339,10 @@ export class AttendanceService {
         {
           workDate,
           status: 'on_leave',
-          leave: approvedLeave,
+          leave: {
+            id: approvedLeave.id,
+            leaveType: approvedLeave.leaveType,
+          },
         },
         'Daily attendance status retrieved successfully.',
       );
@@ -319,12 +357,16 @@ export class AttendanceService {
     if (attendance) {
       return successResponse(
         {
-          ...attendance,
+          workDate,
           status: getAttendanceStatus({
             checkOutAt: attendance.checkOutAt,
             lateMinutes: attendance.lateMinutes,
             undertimeMinutes: attendance.undertimeMinutes,
           }),
+          checkInAt: attendance.checkInAt,
+          checkOutAt: attendance.checkOutAt,
+          lateMinutes: attendance.lateMinutes,
+          undertimeMinutes: attendance.undertimeMinutes,
         },
         'Daily attendance status retrieved successfully.',
       );
@@ -378,6 +420,39 @@ export class AttendanceService {
       'Employee attendance summary retrieved successfully.',
     );
   }
+  async findEmployeeAttendance(employeeId: string, from: string, to: string) {
+    const employee = await this.employeeRepository.findById(employeeId);
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found.');
+    }
+
+    const { fromDate, toDate } = this.parseDateRange(from, to);
+    const attendances =
+      await this.attendanceRepository.findHistoryByEmployeeAndDateRange(
+        employee.id,
+        fromDate,
+        toDate,
+      );
+
+    const data = attendances.map((attendance) => ({
+      workDate: attendance.workDate,
+      checkInAt: attendance.checkInAt,
+      checkOutAt: attendance.checkOutAt,
+      lateMinutes: attendance.lateMinutes,
+      undertimeMinutes: attendance.undertimeMinutes,
+      status: getAttendanceStatus({
+        checkOutAt: attendance.checkOutAt,
+        lateMinutes: attendance.lateMinutes,
+        undertimeMinutes: attendance.undertimeMinutes,
+      }),
+    }));
+
+    return successResponse(
+      data,
+      'Employee attendance history retrieved successfully.',
+    );
+  }
   async buildCompanyDailyAttendance(date: string) {
     const workDate = new Date(`${date}T00:00:00.000Z`);
 
@@ -407,16 +482,13 @@ export class AttendanceService {
     };
 
     if (holiday?.isActive) {
-      return successResponse(
-        {
-          ...summary,
-          holiday: {
-            id: holiday.id,
-            name: holiday.name,
-          },
+      return {
+        ...summary,
+        holiday: {
+          id: holiday.id,
+          name: holiday.name,
         },
-        'Company attendance summary retrieved successfully.',
-      );
+      };
     }
 
     const weekday = getWeekday(workDate);
@@ -544,7 +616,10 @@ export class AttendanceService {
           employee: employeeData,
           workDate,
           status: 'on_leave',
-          leave: approvedLeave,
+          leave: {
+            id: approvedLeave.id,
+            leaveType: approvedLeave.leaveType,
+          },
         };
       }
 
@@ -555,12 +630,16 @@ export class AttendanceService {
       if (attendance) {
         return {
           employee: employeeData,
-          ...attendance,
+          workDate,
           status: getAttendanceStatus({
             checkOutAt: attendance.checkOutAt,
             lateMinutes: attendance.lateMinutes,
             undertimeMinutes: attendance.undertimeMinutes,
           }),
+          checkInAt: attendance.checkInAt,
+          checkOutAt: attendance.checkOutAt,
+          lateMinutes: attendance.lateMinutes,
+          undertimeMinutes: attendance.undertimeMinutes,
         };
       }
 
@@ -640,6 +719,10 @@ export class AttendanceService {
           employee: employeeData,
           workDate,
           status: 'on_leave',
+          leave: {
+            id: approvedLeave.id,
+            leaveType: approvedLeave.leaveType,
+          },
         };
       }
 
@@ -650,13 +733,16 @@ export class AttendanceService {
       if (attendance) {
         return {
           employee: employeeData,
-          ...attendance,
-
+          workDate,
           status: getAttendanceStatus({
             checkOutAt: attendance.checkOutAt,
             lateMinutes: attendance.lateMinutes,
             undertimeMinutes: attendance.undertimeMinutes,
           }),
+          checkInAt: attendance.checkInAt,
+          checkOutAt: attendance.checkOutAt,
+          lateMinutes: attendance.lateMinutes,
+          undertimeMinutes: attendance.undertimeMinutes,
         };
       }
 

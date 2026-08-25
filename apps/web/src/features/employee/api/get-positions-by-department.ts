@@ -7,8 +7,10 @@ interface PositionLookup {
 }
 
 export const getPositionsByDepartment = async (departmentId: string) => {
+  const query = new URLSearchParams({ departmentId });
+
   return apiClient<ApiResponse<PositionLookup[]>>(
-    `/api/positions?departmentId=${departmentId}`,
+    `/api/positions?${query}`,
     { fallbackMessage: "Unable to load positions." },
   );
 };

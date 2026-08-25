@@ -8,7 +8,12 @@ export class DepartmentRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   findAll() {
-    return this.prisma.department.findMany();
+    return this.prisma.department.findMany({
+      select: {
+        id: true,
+        name: true,
+      },
+    });
   }
 
   findById(id: string) {

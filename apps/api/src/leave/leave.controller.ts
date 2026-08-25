@@ -7,6 +7,7 @@ import {
   Patch,
   Param,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { CreateLeaveDto } from './dto/create-leave.dto.js';
@@ -16,6 +17,7 @@ import { RolesGuard } from '../auth/guards/roles.guard.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { RejectLeaveDto } from './dto/reject-leave.dto.js';
 
+@ApiBearerAuth()
 @Controller('leave')
 @UseGuards(JwtAuthGuard)
 export class LeaveController {

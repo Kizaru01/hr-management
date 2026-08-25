@@ -9,6 +9,71 @@ export interface AttendanceSummaryData {
   restDays: number;
   scheduled: number;
 }
+
+export interface EmployeeAttendanceSummary {
+  totalWorkDays: number;
+  present: number;
+  onTime: number;
+  late: number;
+  undertime: number;
+  absent: number;
+  onLeave: number;
+  holidays: number;
+  restDays: number;
+  totalLateMinutes: number;
+  totalUndertimeMinutes: number;
+}
+
+export type AttendanceRecordStatus =
+  | "in_progress"
+  | "late"
+  | "late_and_undertime"
+  | "undertime"
+  | "on_time";
+
+export type AttendanceLeaveType =
+  | "vacation"
+  | "sick"
+  | "emergency"
+  | "maternity"
+  | "paternity"
+  | "unpaid";
+
+export interface EmployeeAttendanceHistoryRecord {
+  workDate: string;
+  checkInAt: string;
+  checkOutAt: string | null;
+  lateMinutes: number;
+  undertimeMinutes: number;
+  status: AttendanceRecordStatus;
+}
+
+export type AttendanceMutationData = EmployeeAttendanceHistoryRecord;
+
+export type MyAttendanceStatus =
+  | {
+      workDate: string;
+      status: "holiday";
+      name: string;
+    }
+  | {
+      workDate: string;
+      status: "rest_day";
+    }
+  | {
+      workDate: string;
+      status: "on_leave";
+      leave: {
+        id: string;
+        leaveType: AttendanceLeaveType;
+      };
+    }
+  | {
+      workDate: string;
+      status: "scheduled" | "absent";
+    }
+  | EmployeeAttendanceHistoryRecord;
+
 export interface AttendanceEmployee {
   id: string;
   employeeNumber: string;
@@ -37,25 +102,14 @@ export type DailyAttendanceRecord =
       status: "on_leave";
       leave: {
         id: string;
-        leaveType:
-          | "vacation"
-          | "sick"
-          | "emergency"
-          | "maternity"
-          | "paternity"
-          | "unpaid";
+        leaveType: AttendanceLeaveType;
       };
     })
   | (BaseDailyAttendance & {
       status: "absent" | "scheduled";
     })
   | (BaseDailyAttendance & {
-      status:
-        | "in_progress"
-        | "late"
-        | "late_and_undertime"
-        | "undertime"
-        | "on_time";
+      status: AttendanceRecordStatus;
       checkInAt: string;
       checkOutAt: string | null;
       lateMinutes: number;

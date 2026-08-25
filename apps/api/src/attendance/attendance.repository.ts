@@ -43,6 +43,7 @@ export class AttendanceRepository {
         workDate,
       },
       select: {
+        workDate: true,
         employeeId: true,
         checkInAt: true,
         checkOutAt: true,
@@ -62,6 +63,27 @@ export class AttendanceRepository {
       },
       orderBy: {
         workDate: 'asc',
+      },
+    });
+  }
+  findHistoryByEmployeeAndDateRange(employeeId: string, from: Date, to: Date) {
+    return this.prisma.attendance.findMany({
+      where: {
+        employeeId,
+        workDate: {
+          gte: from,
+          lte: to,
+        },
+      },
+      select: {
+        workDate: true,
+        checkInAt: true,
+        checkOutAt: true,
+        lateMinutes: true,
+        undertimeMinutes: true,
+      },
+      orderBy: {
+        workDate: 'desc',
       },
     });
   }

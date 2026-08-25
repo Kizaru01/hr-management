@@ -2,8 +2,10 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { unlink } from 'node:fs/promises';
 import { EmployeeRepository } from '../employee/employee.repository';
 import { CreateEmployeeDocumentInput } from '@hr-management/validation';
 import { successResponse } from '../common/responses/success-response';
@@ -11,9 +13,12 @@ import { EmployeeDocumentRepository } from './employee-document.repository';
 import { NotificationService } from '../notification/notification.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { dateOnlyToUtc } from '../common/dates/date-conversion.js';
+import { mapEmployeeDocumentListItem } from './employee-document.mapper.js';
 
 @Injectable()
 export class EmployeeDocumentService {
+  private readonly logger = new Logger(EmployeeDocumentService.name);
+
   constructor(
     private readonly employeeRepository: EmployeeRepository,
     private readonly employeeDocumentRepository: EmployeeDocumentRepository,
@@ -29,63 +34,77 @@ export class EmployeeDocumentService {
     if (!file) {
       throw new BadRequestException('Document file is required.');
     }
-    const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+    let documentPersisted = false;
 
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException(
-        'Only PDF, JPEG, and PNG files are allowed.',
-      );
-    }
+    try {
+      const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png'];
 
-    const fileUrl = `uploads/employee-documents/${file.filename}`;
-    const employee = await this.employeeRepository.findById(employeeId);
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        throw new BadRequestException(
+          'Only PDF, JPEG, and PNG files are allowed.',
+        );
+      }
 
-    if (!employee) {
-      throw new NotFoundException('Employee not found.');
-    }
+      const fileUrl = `uploads/employee-documents/${file.filename}`;
+      const employee = await this.employeeRepository.findById(employeeId);
 
-    const document = await this.employeeDocumentRepository.create({
-      title: input.title.trim(),
-      type: input.type.trim(),
-      fileUrl,
-      issuedAt: input.issuedAt ? dateOnlyToUtc(input.issuedAt) : undefined,
-      expiresAt: input.expiresAt ? dateOnlyToUtc(input.expiresAt) : undefined,
+      if (!employee) {
+        throw new NotFoundException('Employee not found.');
+      }
 
-      employee: {
-        connect: {
-          id: employee.id,
+      const document = await this.employeeDocumentRepository.create({
+        title: input.title.trim(),
+        type: input.type.trim(),
+        fileUrl,
+        issuedAt: input.issuedAt ? dateOnlyToUtc(input.issuedAt) : undefined,
+        expiresAt: input.expiresAt ? dateOnlyToUtc(input.expiresAt) : undefined,
+
+        employee: {
+          connect: {
+            id: employee.id,
+          },
         },
-      },
 
-      uploadedBy: {
-        connect: {
-          id: uploadedByUserId,
+        uploadedBy: {
+          connect: {
+            id: uploadedByUserId,
+          },
         },
-      },
-    });
-
-    if (employee.userId) {
-      await this.notificationService.create({
-        userId: employee.userId,
-        title: 'New employee document',
-        message: `${document.title} has been added to your employee documents.`,
-        type: 'document',
-        resourceType: 'employee_document',
-        resourceId: document.id,
       });
+      documentPersisted = true;
+
+      if (employee.userId) {
+        await this.notificationService.create({
+          userId: employee.userId,
+          title: 'New employee document',
+          message: `${document.title} has been added to your employee documents.`,
+          type: 'document',
+          resourceType: 'employee_document',
+          resourceId: document.id,
+        });
+      }
+      await this.auditLogService.create({
+        actorUserId: uploadedByUserId,
+        action: 'employee_document.create',
+        entityType: 'EmployeeDocument',
+        entityId: document.id,
+        metadata: {
+          employeeId: employee.id,
+          title: document.title,
+          type: document.type,
+        },
+      });
+      return successResponse(
+        { id: document.id },
+        'Employee document created successfully.',
+      );
+    } catch (error) {
+      if (!documentPersisted) {
+        await this.removeUploadedFile(file);
+      }
+
+      throw error;
     }
-    await this.auditLogService.create({
-      actorUserId: uploadedByUserId,
-      action: 'employee_document.create',
-      entityType: 'EmployeeDocument',
-      entityId: document.id,
-      metadata: {
-        employeeId: employee.id,
-        title: document.title,
-        type: document.type,
-      },
-    });
-    return successResponse(document, 'Employee document created successfully.');
   }
   async findByEmployeeId(employeeId: string) {
     const employee = await this.employeeRepository.findById(employeeId);
@@ -97,11 +116,9 @@ export class EmployeeDocumentService {
     const documents = await this.employeeDocumentRepository.findByEmployeeId(
       employee.id,
     );
+    const data = documents.map(mapEmployeeDocumentListItem);
 
-    return successResponse(
-      documents,
-      'Employee documents retrieved successfully.',
-    );
+    return successResponse(data, 'Employee documents retrieved successfully.');
   }
   async findMyDocuments(userId: string) {
     const employee = await this.employeeRepository.findByUserId(userId);
@@ -113,11 +130,9 @@ export class EmployeeDocumentService {
     const documents = await this.employeeDocumentRepository.findByEmployeeId(
       employee.id,
     );
+    const data = documents.map(mapEmployeeDocumentListItem);
 
-    return successResponse(
-      documents,
-      'Employee documents retrieved successfully.',
-    );
+    return successResponse(data, 'Employee documents retrieved successfully.');
   }
   async deactivate(id: string, currentUserId: string) {
     const document = await this.employeeDocumentRepository.findById(id);
@@ -145,7 +160,10 @@ export class EmployeeDocumentService {
     });
 
     return successResponse(
-      updatedDocument,
+      {
+        id: updatedDocument.id,
+        isActive: false as const,
+      },
       'Employee document deactivated successfully.',
     );
   }
@@ -176,5 +194,20 @@ export class EmployeeDocumentService {
     }
 
     return document;
+  }
+
+  private async removeUploadedFile(file: Express.Multer.File) {
+    try {
+      await unlink(file.path);
+    } catch (error) {
+      const cleanupError = error as NodeJS.ErrnoException;
+
+      if (cleanupError.code !== 'ENOENT') {
+        this.logger.error(
+          `Failed to remove uploaded file: ${file.path}`,
+          cleanupError.stack,
+        );
+      }
+    }
   }
 }

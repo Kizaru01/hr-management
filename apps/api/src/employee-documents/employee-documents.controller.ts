@@ -10,6 +10,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { EmployeeDocumentService } from './employee-documents.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -22,6 +23,7 @@ import { extname, join } from 'node:path';
 import { diskStorage } from 'multer';
 import type { Response } from 'express';
 
+@ApiBearerAuth()
 @Controller('employee')
 @UseGuards(JwtAuthGuard)
 export class EmployeeDocumentsController {
