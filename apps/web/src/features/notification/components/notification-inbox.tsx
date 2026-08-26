@@ -10,6 +10,7 @@ import {
   formatNotificationTimestamp,
   notificationTypeLabels,
 } from "../utils/notification-formatters";
+import { isRecentlyPublished } from "../utils/isRecently-published";
 
 interface NotificationInboxProps {
   notifications: Notification[];
@@ -84,8 +85,7 @@ export const NotificationInbox = ({
     }
   };
 
-  const hasPendingMutation =
-    pendingNotificationId !== null || isMarkingAll;
+  const hasPendingMutation = pendingNotificationId !== null || isMarkingAll;
 
   return (
     <div className="space-y-6">
@@ -150,9 +150,11 @@ export const NotificationInbox = ({
                       >
                         {notification.title}
                       </h2>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                        {notificationTypeLabels[notification.type]}
-                      </span>
+                      {isRecentlyPublished(notification.createdAt) && (
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
+                          New
+                        </span>
+                      )}
                       <span className="text-xs text-gray-500">
                         {notification.isRead ? "Read" : "Unread"}
                       </span>

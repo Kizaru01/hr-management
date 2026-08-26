@@ -109,7 +109,7 @@ export class AnnouncementsService {
       )
       .map((recipient) => ({
         userId: recipient.userId,
-        title: 'New announcement',
+        title: 'announcement',
         message: announcement.title,
         type: 'announcement' as const,
         resourceType: 'announcement',
