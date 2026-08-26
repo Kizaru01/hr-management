@@ -6,6 +6,9 @@ import { normalizeAttendanceDate } from "@/features/attendance/utils/normalize-a
 import { EmployeeProfile } from "@/features/employee/components/employee-profile";
 import { getEmployee } from "@/features/employee/server/get-employee";
 import { getEmployees } from "@/features/employee/server/get-employees";
+import { EmployeeDocumentsList } from "@/features/employee-document/components/employee-documents-list";
+import { UploadEmployeeDocumentForm } from "@/features/employee-document/components/upload-employee-document-form";
+import { getEmployeeDocuments } from "@/features/employee-document/server/get-employee-documents";
 
 export default async function EmployeePage({
   params,
@@ -22,10 +25,17 @@ export default async function EmployeePage({
     ? getEmployeeAttendanceHistory(id, from, to)
     : Promise.resolve(null);
 
-  const [employee, employees, attendanceSummary, attendanceHistory] =
+  const [
+    employee,
+    employees,
+    documents,
+    attendanceSummary,
+    attendanceHistory,
+  ] =
     await Promise.all([
       getEmployee(id),
       getEmployees(),
+      getEmployeeDocuments(id),
       attendanceSummaryRequest,
       attendanceHistoryRequest,
     ]);
@@ -43,6 +53,20 @@ export default async function EmployeePage({
         employee={employee.data}
         managerOptions={managerOptions}
       />
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-lg font-semibold">Employee Documents</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            View, download, and deactivate this employee&apos;s active
+            documents.
+          </p>
+        </div>
+        <EmployeeDocumentsList
+          documents={documents.data}
+          canDeactivate
+        />
+      </section>
+      <UploadEmployeeDocumentForm employeeId={id} />
       <EmployeeAttendanceSummary
         summary={attendanceSummary?.data ?? null}
         from={from}
