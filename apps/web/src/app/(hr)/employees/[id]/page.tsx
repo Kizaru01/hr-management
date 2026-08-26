@@ -9,6 +9,9 @@ import { getEmployees } from "@/features/employee/server/get-employees";
 import { EmployeeDocumentsList } from "@/features/employee-document/components/employee-documents-list";
 import { UploadEmployeeDocumentForm } from "@/features/employee-document/components/upload-employee-document-form";
 import { getEmployeeDocuments } from "@/features/employee-document/server/get-employee-documents";
+import { CreatePerformanceReviewForm } from "@/features/performance-review/components/create-performance-review-form";
+import { PerformanceReviewsList } from "@/features/performance-review/components/performance-reviews-list";
+import { getEmployeePerformanceReviews } from "@/features/performance-review/server/get-employee-performance-reviews";
 
 export default async function EmployeePage({
   params,
@@ -29,6 +32,7 @@ export default async function EmployeePage({
     employee,
     employees,
     documents,
+    performanceReviews,
     attendanceSummary,
     attendanceHistory,
   ] =
@@ -36,6 +40,7 @@ export default async function EmployeePage({
       getEmployee(id),
       getEmployees(),
       getEmployeeDocuments(id),
+      getEmployeePerformanceReviews(id),
       attendanceSummaryRequest,
       attendanceHistoryRequest,
     ]);
@@ -53,6 +58,16 @@ export default async function EmployeePage({
         employee={employee.data}
         managerOptions={managerOptions}
       />
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">Performance Reviews</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            View this employee&apos;s review history and record new feedback.
+          </p>
+        </div>
+        <PerformanceReviewsList reviews={performanceReviews.data} />
+        <CreatePerformanceReviewForm employeeId={id} />
+      </section>
       <section className="space-y-3">
         <div>
           <h2 className="text-lg font-semibold">Employee Documents</h2>
