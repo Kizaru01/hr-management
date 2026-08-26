@@ -14,6 +14,15 @@ export async function authenticatedApi<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const response = await authenticatedFetch(path, options);
+
+  return apiResponse<T>(response);
+}
+
+export async function authenticatedFetch(
+  path: string,
+  options: RequestInit = {},
+): Promise<Response> {
   const apiUrl = process.env.API_URL;
 
   if (!apiUrl) {
@@ -27,17 +36,23 @@ export async function authenticatedApi<T>(
     throw new RequestError(401, "Unauthenticated.");
   }
 
-  const response = await fetch(`${apiUrl}${path}`, {
+  const headers = new Headers(options.headers);
+
+  if (
+    options.body !== undefined &&
+    !(options.body instanceof FormData) &&
+    !headers.has("Content-Type")
+  ) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  headers.set("Authorization", `Bearer ${token}`);
+
+  return fetch(`${apiUrl}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
+    headers,
     cache: "no-store",
   });
-
-  return apiResponse<T>(response);
 }
 
 export async function apiResponse<T>(response: Response): Promise<T> {
