@@ -12,6 +12,10 @@ import { getEmployeeDocuments } from "@/features/employee-document/server/get-em
 import { CreatePerformanceReviewForm } from "@/features/performance-review/components/create-performance-review-form";
 import { PerformanceReviewsList } from "@/features/performance-review/components/performance-reviews-list";
 import { getEmployeePerformanceReviews } from "@/features/performance-review/server/get-employee-performance-reviews";
+import { AssignShiftForm } from "@/features/shift/components/assign-shift-form";
+import { EmployeeShiftHistory } from "@/features/shift/components/employee-shift-history";
+import { getEmployeeShiftAssignments } from "@/features/shift/server/get-employee-shift-assignments";
+import { getShifts } from "@/features/shift/server/get-shifts";
 
 export default async function EmployeePage({
   params,
@@ -33,6 +37,8 @@ export default async function EmployeePage({
     employees,
     documents,
     performanceReviews,
+    shifts,
+    shiftAssignments,
     attendanceSummary,
     attendanceHistory,
   ] =
@@ -41,6 +47,8 @@ export default async function EmployeePage({
       getEmployees(),
       getEmployeeDocuments(id),
       getEmployeePerformanceReviews(id),
+      getShifts(),
+      getEmployeeShiftAssignments(id),
       attendanceSummaryRequest,
       attendanceHistoryRequest,
     ]);
@@ -51,6 +59,14 @@ export default async function EmployeePage({
       id: item.id,
       name: `${item.firstName} ${item.lastName}`,
     }));
+  const activeShiftOptions = shifts.data
+    .filter((shift) => shift.isActive)
+    .map(({ id: shiftId, name, startTime, endTime }) => ({
+      id: shiftId,
+      name,
+      startTime,
+      endTime,
+    }));
 
   return (
     <div className="space-y-6">
@@ -58,6 +74,23 @@ export default async function EmployeePage({
         employee={employee.data}
         managerOptions={managerOptions}
       />
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">Shift Schedule</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Assign a work schedule and review this employee&apos;s complete
+            assignment history.
+          </p>
+        </div>
+
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(17rem,0.65fr)_minmax(0,1.35fr)]">
+          <AssignShiftForm
+            employeeId={id}
+            shifts={activeShiftOptions}
+          />
+          <EmployeeShiftHistory assignments={shiftAssignments.data} />
+        </div>
+      </section>
       <section className="space-y-4">
         <div>
           <h2 className="text-lg font-semibold">Performance Reviews</h2>
