@@ -13,7 +13,10 @@ import { EmployeeDocumentRepository } from './employee-document.repository';
 import { NotificationService } from '../notification/notification.service';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { dateOnlyToUtc } from '../common/dates/date-conversion.js';
-import { mapEmployeeDocumentListItem } from './employee-document.mapper.js';
+import {
+  mapEmployeeDocumentListItem,
+  mapManagedEmployeeDocumentListItem,
+} from './employee-document.mapper.js';
 
 @Injectable()
 export class EmployeeDocumentService {
@@ -120,6 +123,14 @@ export class EmployeeDocumentService {
 
     return successResponse(data, 'Employee documents retrieved successfully.');
   }
+
+  async findAll() {
+    const documents = await this.employeeDocumentRepository.findAllActive();
+    const data = documents.map(mapManagedEmployeeDocumentListItem);
+
+    return successResponse(data, 'Employee documents retrieved successfully.');
+  }
+
   async findMyDocuments(userId: string) {
     const employee = await this.employeeRepository.findByUserId(userId);
 

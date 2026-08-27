@@ -1,5 +1,6 @@
 import { EmployeeDocumentsList } from "@/features/employee-document/components/employee-documents-list";
 import { getMyDocuments } from "@/features/employee-document/server/get-my-documents";
+import { getEmployeeDocumentReferenceDate } from "@/features/employee-document/utils/employee-document-formatters";
 
 export default async function EmployeeDocumentsPage() {
   const response = await getMyDocuments();
@@ -13,7 +14,10 @@ export default async function EmployeeDocumentsPage() {
         </p>
       </div>
 
-      <EmployeeDocumentsList documents={response.data} />
+      <EmployeeDocumentsList
+        documents={response.data}
+        referenceDate={getEmployeeDocumentReferenceDate()}
+      />
     </div>
   );
 }

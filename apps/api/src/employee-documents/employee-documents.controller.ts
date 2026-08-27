@@ -68,6 +68,12 @@ export class EmployeeDocumentsController {
   findMyDocuments(@CurrentUser() user: AuthenticatedUser) {
     return this.employeeDocumentService.findMyDocuments(user.id);
   }
+  @Get('documents')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'hr')
+  findAllDocuments() {
+    return this.employeeDocumentService.findAll();
+  }
   @Get(':employeeId/documents')
   @UseGuards(RolesGuard)
   @Roles('admin', 'hr')
