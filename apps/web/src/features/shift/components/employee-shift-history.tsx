@@ -18,9 +18,9 @@ export const EmployeeShiftHistory = ({
   <section className="min-w-0 space-y-3">
     <div className="flex items-start justify-between gap-3">
       <div>
-        <h3 className="font-semibold">Assignment history</h3>
-        <p className="mt-1 text-sm text-foreground/60">
-          Newest effective period first.
+        <h2 className="text-lg font-semibold">Shift Schedule</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Review this employee&apos;s complete assignment history.
         </p>
       </div>
       <span className="shrink-0 rounded-full border border-foreground/20 bg-foreground/5 px-2.5 py-1 text-xs font-medium text-foreground/65">

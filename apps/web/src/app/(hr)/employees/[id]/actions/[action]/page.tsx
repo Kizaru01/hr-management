@@ -87,10 +87,7 @@ export default async function EmployeeActionPage({
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold">Other actions</h2>
-        <EmployeeRecordActionLinks
-          employeeId={id}
-          currentAction={action}
-        />
+        <EmployeeRecordActionLinks employeeId={id} currentAction={action} />
       </section>
 
       {action === "upload-document" ? (

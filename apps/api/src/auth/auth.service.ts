@@ -31,6 +31,12 @@ export class AuthService {
       throw new BadRequestException('Activation token has expired.');
     }
 
+    if (user.employee?.employmentStatus === 'terminated') {
+      throw new BadRequestException(
+        'A terminated employee account cannot be activated.',
+      );
+    }
+
     const passwordHash = await this.passwordService.hash(input.password);
 
     const updatedUser = await this.userRepository.activate(

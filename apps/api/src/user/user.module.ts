@@ -4,9 +4,10 @@ import { UserController } from './user.controller.js';
 import { UserRepository } from './user.repository.js';
 import { UserService } from './user.service.js';
 import { SecurityModule } from '../common/security/security.module.js';
+import { AuditLogModule } from '../audit-log/audit-log.module.js';
 
 @Module({
-  imports: [SecurityModule],
+  imports: [SecurityModule, AuditLogModule],
   controllers: [UserController],
   providers: [UserService, UserRepository, EmployeeRepository],
   exports: [UserRepository],

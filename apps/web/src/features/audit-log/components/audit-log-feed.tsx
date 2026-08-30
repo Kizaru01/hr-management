@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
+import { useSheetController } from "@/components/sheet";
 import type { AuditLogListItem } from "../types/audit-log";
 import {
   formatAuditLogRole,
@@ -20,35 +20,14 @@ const desktopColumns =
   "md:grid-cols-[minmax(0,1.35fr)_minmax(7rem,0.7fr)_minmax(0,1.2fr)_minmax(10rem,0.85fr)]";
 
 export const AuditLogFeed = ({ auditLogs }: AuditLogFeedProps) => {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const lastTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const [selectedAuditLog, setSelectedAuditLog] =
-    useState<AuditLogListItem | null>(null);
+  const sheet = useSheetController<AuditLogListItem>();
+  const selectedAuditLog = sheet.content;
 
   const handleSelect = (
     auditLog: AuditLogListItem,
     trigger: HTMLButtonElement,
   ) => {
-    setSelectedAuditLog(auditLog);
-    lastTriggerRef.current = trigger;
-
-    requestAnimationFrame(() => {
-      if (!dialogRef.current?.open) {
-        dialogRef.current?.showModal();
-      }
-    });
-  };
-
-  const handleRequestClose = () => {
-    dialogRef.current?.close();
-  };
-
-  const handleAfterClose = () => {
-    setSelectedAuditLog(null);
-
-    requestAnimationFrame(() => {
-      lastTriggerRef.current?.focus({ preventScroll: true });
-    });
+    sheet.openSheet(auditLog, trigger);
   };
 
   if (auditLogs.length === 0) {
@@ -164,9 +143,9 @@ export const AuditLogFeed = ({ auditLogs }: AuditLogFeedProps) => {
 
       <AuditLogDetailsPanel
         auditLog={selectedAuditLog}
-        dialogRef={dialogRef}
-        onRequestClose={handleRequestClose}
-        onAfterClose={handleAfterClose}
+        dialogRef={sheet.dialogRef}
+        onRequestClose={sheet.requestClose}
+        onAfterClose={sheet.afterClose}
       />
     </>
   );

@@ -25,11 +25,7 @@ export const PerformanceReviewsList = ({
   reviews,
 }: PerformanceReviewsListProps) => {
   if (reviews.length === 0) {
-    return (
-      <div className="rounded-xl border px-6 py-8 text-center text-sm text-muted-foreground">
-        No performance reviews available.
-      </div>
-    );
+    return;
   }
 
   return (

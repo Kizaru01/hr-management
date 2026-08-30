@@ -7,7 +7,9 @@ export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   const isProtectedRoute =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/employee");
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/employee") ||
+    pathname.startsWith("/users");
 
   const isLoginRoute = pathname === "/login";
 
@@ -23,5 +25,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/employee/:path*", "/login"],
+  matcher: ["/dashboard/:path*", "/employee/:path*", "/users/:path*", "/login"],
 };

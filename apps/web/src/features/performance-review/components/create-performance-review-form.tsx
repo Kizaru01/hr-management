@@ -15,9 +15,7 @@ type Feedback = {
   message: string;
 };
 
-const normalizeFieldErrors = (
-  errors: Record<string, string[] | undefined>,
-) =>
+const normalizeFieldErrors = (errors: Record<string, string[] | undefined>) =>
   Object.entries(errors).reduce<Record<string, string[]>>(
     (normalized, [field, messages]) => {
       if (messages) {
@@ -40,9 +38,7 @@ const optionalText = (value: FormDataEntryValue | null) => {
 };
 
 const FieldError = ({ messages }: { messages?: string[] }) =>
-  messages?.[0] ? (
-    <p className="text-sm text-red-700">{messages[0]}</p>
-  ) : null;
+  messages?.[0] ? <p className="text-sm text-red-700">{messages[0]}</p> : null;
 
 export const CreatePerformanceReviewForm = ({
   employeeId,
@@ -77,9 +73,7 @@ export const CreatePerformanceReviewForm = ({
         type: "error",
         message: "Please correct the highlighted fields.",
       });
-      setFieldErrors(
-        normalizeFieldErrors(result.error.flatten().fieldErrors),
-      );
+      setFieldErrors(normalizeFieldErrors(result.error.flatten().fieldErrors));
       return;
     }
 
@@ -90,7 +84,8 @@ export const CreatePerformanceReviewForm = ({
 
       form.reset();
       setFeedback({ type: "success", message: response.message });
-      router.refresh();
+      // router.refresh();
+      router.push(`/employees/${employeeId}`);
     } catch (error) {
       const backendFieldErrors =
         error instanceof ApiError && error.details ? error.details : {};
@@ -101,8 +96,8 @@ export const CreatePerformanceReviewForm = ({
           Object.keys(backendFieldErrors).length > 0
             ? "Please correct the highlighted fields."
             : error instanceof ApiError
-            ? error.message
-            : "Unable to create performance review.",
+              ? error.message
+              : "Unable to create performance review.",
       });
       setFieldErrors(backendFieldErrors);
     } finally {

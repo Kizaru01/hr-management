@@ -2,6 +2,31 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma, UserRole } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
+const managedUserSelect = {
+  id: true,
+  email: true,
+  role: true,
+  status: true,
+  isActive: true,
+  lastLoginAt: true,
+  createdAt: true,
+  employee: {
+    select: {
+      id: true,
+      employeeNumber: true,
+      firstName: true,
+      middleName: true,
+      lastName: true,
+      email: true,
+      employmentStatus: true,
+    },
+  },
+} satisfies Prisma.UserSelect;
+
+export type ManagedUserRecord = Prisma.UserGetPayload<{
+  select: typeof managedUserSelect;
+}>;
+
 @Injectable()
 export class UserRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -25,19 +50,28 @@ export class UserRepository {
     });
   }
 
-  findAll() {
+  findAllForManagement() {
     return this.prisma.user.findMany({
-      include: {
-        employee: true,
+      select: managedUserSelect,
+      orderBy: {
+        createdAt: 'desc',
       },
     });
   }
+
+  findForManagementById(id: string, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+
+    return client.user.findUnique({
+      where: { id },
+      select: managedUserSelect,
+    });
+  }
+
   create(
     data: {
       email: string;
       role: UserRole;
-      /** Internal Employee.id reference, not the business employee number. */
-      employeeId?: string;
       activationTokenHash: string;
       activationExpiresAt: Date;
     },
@@ -65,6 +99,13 @@ export class UserRepository {
         activationTokenHash,
         status: 'pending',
       },
+      include: {
+        employee: {
+          select: {
+            employmentStatus: true,
+          },
+        },
+      },
     });
   }
   activate(id: string, passwordHash: string) {
@@ -87,14 +128,39 @@ export class UserRepository {
       },
     });
   }
-  deactivate(userId: string) {
-    return this.prisma.user.update({
+  countActiveAdministrators(tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+
+    return client.user.count({
       where: {
-        id: userId,
+        role: 'admin',
+        status: 'active',
+        isActive: true,
+      },
+    });
+  }
+
+  updateRole(id: string, role: UserRole, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+
+    return client.user.update({
+      where: { id },
+      data: { role },
+      select: managedUserSelect,
+    });
+  }
+
+  updateAccess(id: string, isActive: boolean, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+
+    return client.user.update({
+      where: {
+        id,
       },
       data: {
-        isActive: false,
+        isActive,
       },
+      select: managedUserSelect,
     });
   }
 }

@@ -12,6 +12,7 @@ import { announcementAudienceLabels } from "../utils/announcement-formatters";
 interface CreateAnnouncementFormProps {
   departments: LookupOption[];
   branches: LookupOption[];
+  onCancel?: () => void;
 }
 
 type Feedback = {
@@ -37,6 +38,7 @@ const toIsoDateTime = (value: string) => {
 export const CreateAnnouncementForm = ({
   departments,
   branches,
+  onCancel,
 }: CreateAnnouncementFormProps) => {
   const router = useRouter();
   const [audience, setAudience] = useState<AnnouncementAudience>("company");
@@ -115,33 +117,26 @@ export const CreateAnnouncementForm = ({
   };
 
   return (
-    <section className="rounded-lg border p-6 shadow-sm">
-      <div>
-        <h2 className="text-lg font-semibold">Create Announcement</h2>
-        <p className="mt-1 text-sm text-gray-600">
-          Publish an announcement to the company or a specific workplace group.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
-        <label
-          className="grid gap-1 sm:col-span-2"
-          htmlFor="announcement-title"
-        >
+    <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+      <label
+        className="grid gap-1 sm:col-span-2"
+        htmlFor="announcement-title"
+      >
           <span className="text-sm font-medium">Title</span>
           <input
             id="announcement-title"
             name="title"
             type="text"
+            data-sheet-initial-focus
             required
             maxLength={150}
             disabled={isSubmitting}
             className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
           />
           <FieldError messages={fieldErrors.title} />
-        </label>
+      </label>
 
-        <label className="grid gap-1" htmlFor="announcement-audience">
+      <label className="grid gap-1" htmlFor="announcement-audience">
           <span className="text-sm font-medium">Audience</span>
           <select
             id="announcement-audience"
@@ -158,9 +153,9 @@ export const CreateAnnouncementForm = ({
             ))}
           </select>
           <FieldError messages={fieldErrors.audience} />
-        </label>
+      </label>
 
-        <label className="grid gap-1" htmlFor="announcement-expires-at">
+      <label className="grid gap-1" htmlFor="announcement-expires-at">
           <span className="text-sm font-medium">Expires At (optional)</span>
           <input
             id="announcement-expires-at"
@@ -171,9 +166,9 @@ export const CreateAnnouncementForm = ({
             className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
           />
           <FieldError messages={fieldErrors.expiresAt} />
-        </label>
+      </label>
 
-        {audience === "department" ? (
+      {audience === "department" ? (
           <label
             className="grid gap-1 sm:col-span-2"
             htmlFor="announcement-department"
@@ -197,9 +192,9 @@ export const CreateAnnouncementForm = ({
             </select>
             <FieldError messages={fieldErrors.departmentId} />
           </label>
-        ) : null}
+      ) : null}
 
-        {audience === "branch" ? (
+      {audience === "branch" ? (
           <label
             className="grid gap-1 sm:col-span-2"
             htmlFor="announcement-branch"
@@ -223,12 +218,12 @@ export const CreateAnnouncementForm = ({
             </select>
             <FieldError messages={fieldErrors.branchId} />
           </label>
-        ) : null}
+      ) : null}
 
-        <label
-          className="grid gap-1 sm:col-span-2"
-          htmlFor="announcement-content"
-        >
+      <label
+        className="grid gap-1 sm:col-span-2"
+        htmlFor="announcement-content"
+      >
           <span className="text-sm font-medium">Content</span>
           <textarea
             id="announcement-content"
@@ -239,9 +234,9 @@ export const CreateAnnouncementForm = ({
             className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
           />
           <FieldError messages={fieldErrors.content} />
-        </label>
+      </label>
 
-        <div className="flex flex-col-reverse gap-3 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col-reverse gap-3 border-t border-foreground/15 pt-4 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
           {feedback ? (
             <p
               role={feedback.type === "error" ? "alert" : "status"}
@@ -255,15 +250,27 @@ export const CreateAnnouncementForm = ({
             <span />
           )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? "Publishing..." : "Publish Announcement"}
-          </button>
-        </div>
-      </form>
-    </section>
+          <div className="flex gap-2">
+            {onCancel ? (
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={isSubmitting}
+                className="rounded-md border border-foreground/25 px-4 py-2 text-sm font-medium hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isSubmitting ? "Publishing..." : "Publish announcement"}
+            </button>
+          </div>
+      </div>
+    </form>
   );
 };

@@ -38,16 +38,15 @@ export default async function EmployeePage({
     shiftAssignments,
     attendanceSummary,
     attendanceHistory,
-  ] =
-    await Promise.all([
-      getEmployee(id),
-      getEmployees(),
-      getEmployeeDocuments(id),
-      getEmployeePerformanceReviews(id),
-      getEmployeeShiftAssignments(id),
-      attendanceSummaryRequest,
-      attendanceHistoryRequest,
-    ]);
+  ] = await Promise.all([
+    getEmployee(id),
+    getEmployees(),
+    getEmployeeDocuments(id),
+    getEmployeePerformanceReviews(id),
+    getEmployeeShiftAssignments(id),
+    attendanceSummaryRequest,
+    attendanceHistoryRequest,
+  ]);
 
   const managerOptions = employees.data
     .filter((item) => item.id !== id && item.employmentStatus === "active")
@@ -64,45 +63,39 @@ export default async function EmployeePage({
       <section className="space-y-3">
         <div>
           <h2 className="text-lg font-semibold">Employee actions</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Open a focused task without leaving this employee&apos;s record
-            context.
-          </p>
         </div>
         <EmployeeRecordActionLinks employeeId={id} />
       </section>
       <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">Shift Schedule</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Review this employee&apos;s complete assignment history.
-          </p>
-        </div>
         <EmployeeShiftHistory assignments={shiftAssignments.data} />
       </section>
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-lg font-semibold">Performance Reviews</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            View this employee&apos;s complete review history.
-          </p>
-        </div>
-        <PerformanceReviewsList reviews={performanceReviews.data} />
-      </section>
-      <section className="space-y-3">
-        <div>
-          <h2 className="text-lg font-semibold">Employee Documents</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            View, download, and deactivate this employee&apos;s active
-            documents.
-          </p>
-        </div>
-        <EmployeeDocumentsList
-          documents={documents.data}
-          referenceDate={getEmployeeDocumentReferenceDate()}
-          canDeactivate
-        />
-      </section>
+      {performanceReviews.data.length === 1 && (
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold">Performance Reviews</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              View this employee&apos;s complete review history.
+            </p>
+          </div>
+          <PerformanceReviewsList reviews={performanceReviews.data} />
+        </section>
+      )}
+      {documents.data.length === 1 && (
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold">Employee Documents</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              View, download, and deactivate this employee&apos;s active
+              documents.
+            </p>
+          </div>
+          <EmployeeDocumentsList
+            documents={documents.data}
+            referenceDate={getEmployeeDocumentReferenceDate()}
+            canDeactivate
+          />
+        </section>
+      )}
       <EmployeeAttendanceSummary
         summary={attendanceSummary?.data ?? null}
         from={from}

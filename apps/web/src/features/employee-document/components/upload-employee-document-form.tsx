@@ -22,9 +22,7 @@ const ALLOWED_FILE_TYPES = new Set([
   "image/png",
 ]);
 
-const normalizeFieldErrors = (
-  errors: Record<string, string[] | undefined>,
-) =>
+const normalizeFieldErrors = (errors: Record<string, string[] | undefined>) =>
   Object.entries(errors).reduce<Record<string, string[]>>(
     (normalized, [field, messages]) => {
       if (messages) {
@@ -37,9 +35,7 @@ const normalizeFieldErrors = (
   );
 
 const FieldError = ({ messages }: { messages?: string[] }) =>
-  messages?.[0] ? (
-    <p className="text-sm text-red-700">{messages[0]}</p>
-  ) : null;
+  messages?.[0] ? <p className="text-sm text-red-700">{messages[0]}</p> : null;
 
 export const UploadEmployeeDocumentForm = ({
   employeeId,
@@ -185,7 +181,9 @@ export const UploadEmployeeDocumentForm = ({
         </label>
 
         <label className="grid gap-1" htmlFor="document-expires-at">
-          <span className="text-sm font-medium">Expiration Date (optional)</span>
+          <span className="text-sm font-medium">
+            Expiration Date (optional)
+          </span>
           <input
             id="document-expires-at"
             name="expiresAt"

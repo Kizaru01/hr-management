@@ -1,16 +1,20 @@
+import type {
+  CreateUserInput,
+  UpdateUserRoleInput,
+} from '@hr-management/validation';
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { CreateUserInput } from '@hr-management/validation';
+import { AuditLogService } from '../audit-log/audit-log.service.js';
+import { ActivationTokenService } from '../common/security/activation-token.service.js';
 import { successResponse } from '../common/responses/success-response.js';
 import { EmployeeRepository } from '../employee/employee.repository.js';
-import { UserRepository } from './user.repository.js';
-import { PrismaService } from '../prisma/prisma.service';
-import { ActivationTokenService } from '../common/security/activation-token.service.js';
 import { Prisma } from '../generated/prisma/client.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { type ManagedUserRecord, UserRepository } from './user.repository.js';
 
 @Injectable()
 export class UserService {
@@ -19,9 +23,19 @@ export class UserService {
     private readonly activationTokenService: ActivationTokenService,
     private readonly employeeRepository: EmployeeRepository,
     private readonly prisma: PrismaService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
-  async create(input: CreateUserInput) {
+  async findAll() {
+    const users = await this.userRepository.findAllForManagement();
+
+    return successResponse(
+      users.map((user) => this.toManagedUser(user)),
+      'Users retrieved successfully.',
+    );
+  }
+
+  async create(input: CreateUserInput, currentUserId: string) {
     const normalizedEmail = input.email.trim().toLowerCase();
 
     const existingUser = await this.userRepository.findByEmail(normalizedEmail);
@@ -31,7 +45,7 @@ export class UserService {
     }
 
     if (input.role === 'employee' && !input.employeeNumber) {
-      throw new BadRequestException('Employee is required.');
+      throw new BadRequestException('Employee number is required.');
     }
 
     let employeeId: string | undefined;
@@ -45,18 +59,23 @@ export class UserService {
         throw new NotFoundException('Employee not found.');
       }
 
-      employeeId = employee.id;
-
-      if (input.role === 'employee') {
-        if (employee.userId) {
-          throw new ConflictException('Employee already has an account.');
-        }
-        if (employee.email.trim().toLowerCase() !== normalizedEmail) {
-          throw new BadRequestException(
-            'Email does not match the employee record.',
-          );
-        }
+      if (employee.userId) {
+        throw new ConflictException('Employee already has an account.');
       }
+
+      if (employee.email.trim().toLowerCase() !== normalizedEmail) {
+        throw new BadRequestException(
+          'Email does not match the employee record.',
+        );
+      }
+
+      if (employee.employmentStatus === 'terminated') {
+        throw new BadRequestException(
+          'A terminated employee cannot be linked to a new account.',
+        );
+      }
+
+      employeeId = employee.id;
     }
 
     const activation = this.activationTokenService.generate();
@@ -102,6 +121,18 @@ export class UserService {
         throw error;
       });
 
+    await this.auditLogService.create({
+      actorUserId: currentUserId,
+      action: 'user.create',
+      entityType: 'User',
+      entityId: user.id,
+      metadata: {
+        email: user.email,
+        role: user.role,
+        linkedEmployee: Boolean(employeeId),
+      },
+    });
+
     return successResponse(
       {
         user: {
@@ -116,5 +147,212 @@ export class UserService {
       },
       'User created successfully.',
     );
+  }
+
+  async updateRole(
+    userId: string,
+    input: UpdateUserRoleInput,
+    currentUserId: string,
+  ) {
+    const updatedUser = await this.withSerializableSafety(async (tx) => {
+      const user = await this.userRepository.findForManagementById(userId, tx);
+
+      if (!user) {
+        throw new NotFoundException('User not found.');
+      }
+
+      if (user.role === input.role) {
+        throw new BadRequestException(
+          `User is already assigned the ${input.role} role.`,
+        );
+      }
+
+      if (input.role === 'employee') {
+        if (!user.employee) {
+          throw new BadRequestException(
+            'An employee profile must be linked before assigning the employee role.',
+          );
+        }
+
+        if (
+          user.employee.email.trim().toLowerCase() !==
+          user.email.trim().toLowerCase()
+        ) {
+          throw new BadRequestException(
+            'The account email does not match the linked employee record.',
+          );
+        }
+
+        if (user.employee.employmentStatus === 'terminated') {
+          throw new BadRequestException(
+            'A terminated employee cannot be assigned the employee role.',
+          );
+        }
+      }
+
+      if (
+        user.role === 'admin' &&
+        input.role !== 'admin' &&
+        user.status === 'active' &&
+        user.isActive
+      ) {
+        await this.assertAnotherActiveAdministrator(tx);
+      }
+
+      return this.userRepository.updateRole(user.id, input.role, tx);
+    });
+
+    await this.auditLogService.create({
+      actorUserId: currentUserId,
+      action: 'user.role.update',
+      entityType: 'User',
+      entityId: updatedUser.id,
+      metadata: {
+        role: updatedUser.role,
+      },
+    });
+
+    return successResponse(
+      this.toManagedUser(updatedUser),
+      'User role updated successfully.',
+    );
+  }
+
+  async activateAccess(userId: string, currentUserId: string) {
+    const updatedUser = await this.withSerializableSafety(async (tx) => {
+      const user = await this.userRepository.findForManagementById(userId, tx);
+
+      if (!user) {
+        throw new NotFoundException('User not found.');
+      }
+
+      if (user.status !== 'active') {
+        throw new BadRequestException(
+          'Only an activated account can have access re-enabled.',
+        );
+      }
+
+      if (user.isActive) {
+        throw new BadRequestException('Account access is already active.');
+      }
+
+      if (user.employee?.employmentStatus === 'terminated') {
+        throw new BadRequestException(
+          'A terminated employee account cannot be reactivated here.',
+        );
+      }
+
+      return this.userRepository.updateAccess(user.id, true, tx);
+    });
+
+    await this.auditLogService.create({
+      actorUserId: currentUserId,
+      action: 'user.access.activate',
+      entityType: 'User',
+      entityId: updatedUser.id,
+    });
+
+    return successResponse(
+      this.toManagedUser(updatedUser),
+      'Account access activated successfully.',
+    );
+  }
+
+  async deactivateAccess(userId: string, currentUserId: string) {
+    if (userId === currentUserId) {
+      throw new BadRequestException('You cannot deactivate your own account.');
+    }
+
+    const updatedUser = await this.withSerializableSafety(async (tx) => {
+      const user = await this.userRepository.findForManagementById(userId, tx);
+
+      if (!user) {
+        throw new NotFoundException('User not found.');
+      }
+
+      if (!user.isActive) {
+        throw new BadRequestException('Account access is already inactive.');
+      }
+
+      if (user.role === 'admin' && user.status === 'active') {
+        await this.assertAnotherActiveAdministrator(tx);
+      }
+
+      return this.userRepository.updateAccess(user.id, false, tx);
+    });
+
+    await this.auditLogService.create({
+      actorUserId: currentUserId,
+      action: 'user.access.deactivate',
+      entityType: 'User',
+      entityId: updatedUser.id,
+    });
+
+    return successResponse(
+      this.toManagedUser(updatedUser),
+      'Account access deactivated successfully.',
+    );
+  }
+
+  private async assertAnotherActiveAdministrator(tx: Prisma.TransactionClient) {
+    const activeAdministratorCount =
+      await this.userRepository.countActiveAdministrators(tx);
+
+    if (activeAdministratorCount <= 1) {
+      throw new ConflictException(
+        'The last active administrator cannot be removed or deactivated.',
+      );
+    }
+  }
+
+  private async withSerializableSafety<T>(
+    operation: (tx: Prisma.TransactionClient) => Promise<T>,
+  ): Promise<T> {
+    try {
+      return await this.prisma.$transaction(operation, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2034'
+      ) {
+        throw new ConflictException(
+          'The account changed concurrently. Refresh and try again.',
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  private toManagedUser(user: ManagedUserRecord) {
+    const employeeName = user.employee
+      ? [
+          user.employee.firstName,
+          user.employee.middleName,
+          user.employee.lastName,
+        ]
+          .filter(Boolean)
+          .join(' ')
+      : null;
+
+    return {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      isActive: user.isActive,
+      lastLoginAt: user.lastLoginAt,
+      createdAt: user.createdAt,
+      linkedEmployee: user.employee
+        ? {
+            id: user.employee.id,
+            name: employeeName,
+            employeeNumber: user.employee.employeeNumber,
+            employmentStatus: user.employee.employmentStatus,
+          }
+        : null,
+    };
   }
 }

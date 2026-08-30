@@ -1,5 +1,6 @@
-import type { MouseEvent, RefObject } from "react";
-import { Clock3, Cog, UserRound, X } from "lucide-react";
+import type { RefObject } from "react";
+import { Clock3, Cog, UserRound } from "lucide-react";
+import { Sheet } from "@/components/sheet";
 import type { AuditLogListItem } from "../types/audit-log";
 import {
   formatAuditLogAction,
@@ -24,19 +25,6 @@ export const AuditLogDetailsPanel = ({
   onRequestClose,
   onAfterClose,
 }: AuditLogDetailsPanelProps) => {
-  const handleDialogClick = (event: MouseEvent<HTMLDialogElement>) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const clickedInsidePanel =
-      event.clientX >= bounds.left &&
-      event.clientX <= bounds.right &&
-      event.clientY >= bounds.top &&
-      event.clientY <= bounds.bottom;
-
-    if (!clickedInsidePanel) {
-      onRequestClose();
-    }
-  };
-
   const presentation = auditLog
     ? getAuditLogPresentation(auditLog.action)
     : null;
@@ -50,41 +38,17 @@ export const AuditLogDetailsPanel = ({
     : [];
 
   return (
-    <dialog
-      ref={dialogRef}
+    <Sheet
       id="audit-log-details-dialog"
-      aria-labelledby="audit-log-details-title"
-      aria-describedby="audit-log-details-description"
-      onClick={handleDialogClick}
-      onClose={onAfterClose}
-      className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-none w-full max-w-[30rem] border-0 border-l border-foreground/30 bg-background p-0 text-foreground backdrop:bg-black/70 open:flex open:flex-col"
+      title="Activity details"
+      description="Review the selected audit event."
+      dialogRef={dialogRef}
+      onRequestClose={onRequestClose}
+      onAfterClose={onAfterClose}
+      autoFocusClose
     >
-      <header className="flex items-start justify-between gap-4 border-b border-foreground/20 px-5 py-4 sm:px-6">
-        <div>
-          <h2 id="audit-log-details-title" className="text-lg font-semibold">
-            Activity details
-          </h2>
-          <p
-            id="audit-log-details-description"
-            className="mt-1 text-sm text-foreground/60"
-          >
-            Review the selected audit event.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          autoFocus
-          aria-label="Close activity details"
-          onClick={onRequestClose}
-          className="-mr-2 flex size-10 shrink-0 items-center justify-center rounded-md text-foreground/70 transition hover:bg-foreground/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        >
-          <X aria-hidden="true" size={20} />
-        </button>
-      </header>
-
       {auditLog && presentation && Icon && target ? (
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-6">
+        <>
           <section aria-labelledby="activity-summary-heading">
             <div className="flex min-w-0 items-start gap-3">
               <span
@@ -219,9 +183,9 @@ export const AuditLogDetailsPanel = ({
               />
             </dl>
           </details>
-        </div>
+        </>
       ) : null}
-    </dialog>
+    </Sheet>
   );
 };
 
