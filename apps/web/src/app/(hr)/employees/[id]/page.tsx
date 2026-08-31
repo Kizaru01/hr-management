@@ -4,11 +4,16 @@ import { getEmployeeAttendanceHistory } from "@/features/attendance/server/get-e
 import { getEmployeeAttendanceSummary } from "@/features/attendance/server/get-employee-attendance-summary";
 import { normalizeAttendanceDate } from "@/features/attendance/utils/normalize-attendance-date";
 import { EmployeeProfile } from "@/features/employee/components/employee-profile";
+import { EmployeeRecordActionLinks } from "@/features/employee/components/employee-record-action-links";
 import { getEmployee } from "@/features/employee/server/get-employee";
 import { getEmployees } from "@/features/employee/server/get-employees";
 import { EmployeeDocumentsList } from "@/features/employee-document/components/employee-documents-list";
-import { UploadEmployeeDocumentForm } from "@/features/employee-document/components/upload-employee-document-form";
 import { getEmployeeDocuments } from "@/features/employee-document/server/get-employee-documents";
+import { getEmployeeDocumentReferenceDate } from "@/features/employee-document/utils/employee-document-formatters";
+import { PerformanceReviewsList } from "@/features/performance-review/components/performance-reviews-list";
+import { getEmployeePerformanceReviews } from "@/features/performance-review/server/get-employee-performance-reviews";
+import { EmployeeShiftHistory } from "@/features/shift/components/employee-shift-history";
+import { getEmployeeShiftAssignments } from "@/features/shift/server/get-employee-shift-assignments";
 
 export default async function EmployeePage({
   params,
@@ -29,16 +34,19 @@ export default async function EmployeePage({
     employee,
     employees,
     documents,
+    performanceReviews,
+    shiftAssignments,
     attendanceSummary,
     attendanceHistory,
-  ] =
-    await Promise.all([
-      getEmployee(id),
-      getEmployees(),
-      getEmployeeDocuments(id),
-      attendanceSummaryRequest,
-      attendanceHistoryRequest,
-    ]);
+  ] = await Promise.all([
+    getEmployee(id),
+    getEmployees(),
+    getEmployeeDocuments(id),
+    getEmployeePerformanceReviews(id),
+    getEmployeeShiftAssignments(id),
+    attendanceSummaryRequest,
+    attendanceHistoryRequest,
+  ]);
 
   const managerOptions = employees.data
     .filter((item) => item.id !== id && item.employmentStatus === "active")
@@ -46,7 +54,6 @@ export default async function EmployeePage({
       id: item.id,
       name: `${item.firstName} ${item.lastName}`,
     }));
-
   return (
     <div className="space-y-6">
       <EmployeeProfile
@@ -55,18 +62,40 @@ export default async function EmployeePage({
       />
       <section className="space-y-3">
         <div>
-          <h2 className="text-lg font-semibold">Employee Documents</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            View, download, and deactivate this employee&apos;s active
-            documents.
-          </p>
+          <h2 className="text-lg font-semibold">Employee actions</h2>
         </div>
-        <EmployeeDocumentsList
-          documents={documents.data}
-          canDeactivate
-        />
+        <EmployeeRecordActionLinks employeeId={id} />
       </section>
-      <UploadEmployeeDocumentForm employeeId={id} />
+      <section className="space-y-4">
+        <EmployeeShiftHistory assignments={shiftAssignments.data} />
+      </section>
+      {performanceReviews.data.length === 1 && (
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold">Performance Reviews</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              View this employee&apos;s complete review history.
+            </p>
+          </div>
+          <PerformanceReviewsList reviews={performanceReviews.data} />
+        </section>
+      )}
+      {documents.data.length === 1 && (
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold">Employee Documents</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              View, download, and deactivate this employee&apos;s active
+              documents.
+            </p>
+          </div>
+          <EmployeeDocumentsList
+            documents={documents.data}
+            referenceDate={getEmployeeDocumentReferenceDate()}
+            canDeactivate
+          />
+        </section>
+      )}
       <EmployeeAttendanceSummary
         summary={attendanceSummary?.data ?? null}
         from={from}

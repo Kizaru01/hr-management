@@ -1,5 +1,4 @@
-import { CreateAnnouncementForm } from "@/features/announcement/components/create-announcement-form";
-import { ManagedAnnouncements } from "@/features/announcement/components/managed-announcements";
+import { AnnouncementManagement } from "@/features/announcement/components/announcement-management";
 import { getManagedAnnouncements } from "@/features/announcement/server/get-managed-announcements";
 import { getBranches } from "@/features/branch/server/get-branches";
 import { getDepartments } from "@/features/departments/server/get-departments";
@@ -22,19 +21,10 @@ export default async function AnnouncementsPage() {
   }));
 
   return (
-    <section className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Announcements</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Publish and review organization announcements.
-        </p>
-      </div>
-
-      <CreateAnnouncementForm
-        departments={departments}
-        branches={branches}
-      />
-      <ManagedAnnouncements announcements={announcementResponse.data} />
-    </section>
+    <AnnouncementManagement
+      announcements={announcementResponse.data}
+      departments={departments}
+      branches={branches}
+    />
   );
 }

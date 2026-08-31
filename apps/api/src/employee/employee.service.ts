@@ -385,6 +385,12 @@ export class EmployeeService {
       throw new BadRequestException('Employee is already terminated.');
     }
 
+    if (employee.userId === currentUserId) {
+      throw new BadRequestException(
+        'You cannot terminate your own employee record because it would deactivate your account.',
+      );
+    }
+
     const terminationDate = dateOnlyToUtc(input.terminationDate);
 
     if (terminationDate < employee.hireDate) {
@@ -395,13 +401,38 @@ export class EmployeeService {
 
     const terminationReason = input.reason.trim();
 
-    const terminatedEmployee =
-      await this.employeeRepository.terminateWithUserDeactivation(
-        employee.id,
-        employee.userId,
-        terminationDate,
-        terminationReason,
+    let terminationResult: Awaited<
+      ReturnType<EmployeeRepository['terminateWithUserDeactivation']>
+    >;
+
+    try {
+      terminationResult =
+        await this.employeeRepository.terminateWithUserDeactivation(
+          employee.id,
+          employee.userId,
+          terminationDate,
+          terminationReason,
+        );
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2034'
+      ) {
+        throw new ConflictException(
+          'The employee account changed concurrently. Refresh and try again.',
+        );
+      }
+
+      throw error;
+    }
+
+    if (terminationResult.blockedByLastAdministrator) {
+      throw new ConflictException(
+        'The last active administrator cannot be terminated.',
       );
+    }
+
+    const terminatedEmployee = terminationResult.employee;
 
     await this.auditLogService.create({
       actorUserId: currentUserId,

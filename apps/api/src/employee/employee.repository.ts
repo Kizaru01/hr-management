@@ -269,30 +269,73 @@ export class EmployeeRepository {
     terminationDate: Date,
     terminationReason: string,
   ) {
-    return this.prisma.$transaction(async (tx) => {
-      const employee = await tx.employee.update({
-        where: {
-          id: employeeId,
-        },
+    return this.prisma.$transaction(
+      async (tx) => {
+        if (userId) {
+          const linkedUser = await tx.user.findUnique({
+            where: {
+              id: userId,
+            },
+            select: {
+              role: true,
+              status: true,
+              isActive: true,
+            },
+          });
 
-        data: {
-          employmentStatus: 'terminated',
-          terminationDate,
-          terminationReason,
-        },
-      });
+          if (
+            linkedUser?.role === 'admin' &&
+            linkedUser.status === 'active' &&
+            linkedUser.isActive
+          ) {
+            const activeAdministratorCount = await tx.user.count({
+              where: {
+                role: 'admin',
+                status: 'active',
+                isActive: true,
+              },
+            });
 
-      if (userId) {
-        await tx.user.update({
+            if (activeAdministratorCount <= 1) {
+              return {
+                blockedByLastAdministrator: true as const,
+                employee: null,
+              };
+            }
+          }
+        }
+
+        const employee = await tx.employee.update({
           where: {
-            id: userId,
+            id: employeeId,
           },
+
           data: {
-            isActive: false,
+            employmentStatus: 'terminated',
+            terminationDate,
+            terminationReason,
           },
         });
-      }
-      return employee;
-    });
+
+        if (userId) {
+          await tx.user.update({
+            where: {
+              id: userId,
+            },
+            data: {
+              isActive: false,
+            },
+          });
+        }
+
+        return {
+          blockedByLastAdministrator: false as const,
+          employee,
+        };
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    );
   }
 }

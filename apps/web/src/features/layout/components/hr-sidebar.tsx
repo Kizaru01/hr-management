@@ -20,6 +20,11 @@ const navigation = [
     href: '/employees',
   },
   {
+    label: 'Users',
+    href: '/users',
+    adminOnly: true,
+  },
+  {
     label: 'Attendance',
     href: '/attendance',
   },
@@ -59,7 +64,7 @@ export const HrSidebar = ({
       </div>
 
       <nav className="flex-1 space-y-1 p-4">
-        {navigation.map((item) => {
+        {navigation.filter((item) => !item.adminOnly || user.role === 'admin').map((item) => {
           const isActive =
             item.href === '/dashboard'
               ? pathname === item.href

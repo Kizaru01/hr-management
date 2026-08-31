@@ -76,7 +76,7 @@ model User {
   isActive     Boolean    @default(false)
 
   notifications           Notification[]
-  performanceReviewsGiven PerformanceReview[]
+  performanceReviewsGiven PerformanceReview[]ts
   uploadedDocuments       EmployeeDocument[]
   announcements           Announcement[]
   auditLogs               AuditLog[]
