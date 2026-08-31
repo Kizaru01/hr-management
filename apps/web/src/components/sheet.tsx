@@ -1,6 +1,6 @@
 "use client";
 
-import type { MouseEvent, ReactNode, RefObject } from "react";
+import type { KeyboardEvent, MouseEvent, ReactNode, RefObject } from "react";
 import { useRef, useState } from "react";
 import { X } from "lucide-react";
 
@@ -43,6 +43,13 @@ export function Sheet({
     }
   };
 
+  const handleDialogKeyDown = (event: KeyboardEvent<HTMLDialogElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      onRequestClose();
+    }
+  };
+
   return (
     <dialog
       ref={dialogRef}
@@ -50,6 +57,7 @@ export function Sheet({
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
       onClick={handleDialogClick}
+      onKeyDown={handleDialogKeyDown}
       onClose={onAfterClose}
       className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-none w-full max-w-[30rem] border-0 border-l border-foreground/30 bg-background p-0 text-foreground backdrop:bg-black/70 open:flex open:flex-col"
     >
@@ -101,6 +109,16 @@ export function useSheetController<T>() {
     });
   };
 
+  const replaceContent = (nextContent: T) => {
+    setContent(nextContent);
+
+    requestAnimationFrame(() => {
+      dialogRef.current
+        ?.querySelector<HTMLElement>("[data-sheet-initial-focus]")
+        ?.focus();
+    });
+  };
+
   const requestClose = () => {
     dialogRef.current?.close();
   };
@@ -117,6 +135,7 @@ export function useSheetController<T>() {
     dialogRef,
     content,
     openSheet,
+    replaceContent,
     requestClose,
     afterClose,
   };

@@ -1,5 +1,7 @@
 import {
   Activity,
+  BriefcaseBusiness,
+  Building2,
   CircleCheck,
   CircleX,
   FilePlus,
@@ -12,10 +14,8 @@ import {
 
 const neutralPresentation = {
   icon: Activity,
-  iconClassName:
-    "border-foreground/20 bg-foreground/5 text-foreground/70",
-  badgeClassName:
-    "border-foreground/20 bg-foreground/5 text-foreground/80",
+  iconClassName: "border-foreground/20 bg-foreground/5 text-foreground/70",
+  badgeClassName: "border-foreground/20 bg-foreground/5 text-foreground/80",
 };
 
 const informationalPresentation = {
@@ -50,6 +50,50 @@ const actionPresentations: Record<
   "announcement.create": {
     ...informationalPresentation,
     icon: Megaphone,
+  },
+  "department.create": {
+    ...informationalPresentation,
+    icon: Building2,
+  },
+  "department.update": {
+    ...neutralPresentation,
+    icon: Building2,
+  },
+  "department.head.assign": {
+    ...neutralPresentation,
+    icon: UsersRound,
+  },
+  "department.head.replace": {
+    ...neutralPresentation,
+    icon: UsersRound,
+  },
+  "department.head.remove": {
+    ...negativePresentation,
+    icon: UsersRound,
+  },
+  "department.deactivate": {
+    ...negativePresentation,
+    icon: CircleX,
+  },
+  "department.reactivate": {
+    ...positivePresentation,
+    icon: CircleCheck,
+  },
+  "position.create": {
+    ...informationalPresentation,
+    icon: BriefcaseBusiness,
+  },
+  "position.update": {
+    ...neutralPresentation,
+    icon: BriefcaseBusiness,
+  },
+  "position.deactivate": {
+    ...negativePresentation,
+    icon: CircleX,
+  },
+  "position.reactivate": {
+    ...positivePresentation,
+    icon: CircleCheck,
   },
   "employee.update": {
     ...neutralPresentation,

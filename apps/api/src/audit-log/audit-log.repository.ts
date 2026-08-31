@@ -6,8 +6,13 @@ import { PrismaService } from '../prisma/prisma.service.js';
 export class AuditLogRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(data: Prisma.AuditLogCreateInput) {
-    return this.prisma.auditLog.create({
+  create(
+    data: Prisma.AuditLogCreateInput,
+    transaction?: Prisma.TransactionClient,
+  ) {
+    const client = transaction ?? this.prisma;
+
+    return client.auditLog.create({
       data,
     });
   }

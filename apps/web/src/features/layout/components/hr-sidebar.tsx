@@ -20,6 +20,10 @@ const navigation = [
     href: '/employees',
   },
   {
+    label: 'Departments',
+    href: '/departments',
+  },
+  {
     label: 'Users',
     href: '/users',
     adminOnly: true,

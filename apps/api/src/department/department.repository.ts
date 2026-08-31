@@ -1,57 +1,129 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
-import { CreateDepartmentData } from '@hr-management/validation';
+
+export const departmentRecordSelect = {
+  id: true,
+  code: true,
+  name: true,
+  description: true,
+  isActive: true,
+  departmentHeadId: true,
+  departmentHead: {
+    select: {
+      id: true,
+      employeeNumber: true,
+      firstName: true,
+      middleName: true,
+      lastName: true,
+    },
+  },
+  _count: {
+    select: {
+      employees: {
+        where: {
+          employmentStatus: 'active',
+        },
+      },
+    },
+  },
+  createdAt: true,
+  updatedAt: true,
+} satisfies Prisma.DepartmentSelect;
+
+export type DepartmentRecord = Prisma.DepartmentGetPayload<{
+  select: typeof departmentRecordSelect;
+}>;
 
 @Injectable()
 export class DepartmentRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll() {
-    return this.prisma.department.findMany({
+  findAll(transaction?: Prisma.TransactionClient) {
+    const client = transaction ?? this.prisma;
+
+    return client.department.findMany({
+      select: departmentRecordSelect,
+      orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
+    });
+  }
+
+  findById(id: string, transaction?: Prisma.TransactionClient) {
+    const client = transaction ?? this.prisma;
+
+    return client.department.findUnique({
+      where: { id },
+      select: departmentRecordSelect,
+    });
+  }
+
+  create(
+    data: Prisma.DepartmentCreateInput,
+    transaction?: Prisma.TransactionClient,
+  ) {
+    const client = transaction ?? this.prisma;
+
+    return client.department.create({
+      data,
+      select: departmentRecordSelect,
+    });
+  }
+
+  update(
+    id: string,
+    data: Prisma.DepartmentUpdateInput,
+    transaction?: Prisma.TransactionClient,
+  ) {
+    const client = transaction ?? this.prisma;
+
+    return client.department.update({
+      where: { id },
+      data,
+      select: departmentRecordSelect,
+    });
+  }
+
+  findByCode(code: string, transaction?: Prisma.TransactionClient) {
+    const client = transaction ?? this.prisma;
+
+    return client.department.findUnique({
+      where: { code },
+      select: { id: true },
+    });
+  }
+
+  findByName(nameKey: string, transaction?: Prisma.TransactionClient) {
+    const client = transaction ?? this.prisma;
+
+    return client.department.findUnique({
+      where: { nameKey },
+      select: { id: true },
+    });
+  }
+
+  findEmployeeForHead(id: string, transaction?: Prisma.TransactionClient) {
+    const client = transaction ?? this.prisma;
+
+    return client.employee.findUnique({
+      where: { id },
       select: {
         id: true,
-        name: true,
+        employeeNumber: true,
+        employmentStatus: true,
+        headedDepartment: {
+          select: {
+            id: true,
+          },
+        },
       },
     });
   }
 
-  findById(id: string) {
-    return this.prisma.department.findUnique({
-      where: { id },
-    });
-  }
-
-  create(data: CreateDepartmentData) {
-    return this.prisma.department.create({
-      data,
-    });
-  }
-
-  update(id: string, data: Prisma.DepartmentUpdateInput) {
-    return this.prisma.department.update({
-      where: { id },
-      data,
-    });
-  }
-
-  remove(id: string) {
-    return this.prisma.department.delete({
-      where: {
-        id,
-      },
-    });
-  }
-
-  findByCode(code: string) {
-    return this.prisma.department.findUnique({
-      where: { code },
-    });
-  }
-
-  findByName(nameKey: string) {
-    return this.prisma.department.findUnique({
-      where: { nameKey },
+  transaction<T>(
+    operation: (transaction: Prisma.TransactionClient) => Promise<T>,
+  ) {
+    return this.prisma.$transaction(operation, {
+      isolationLevel: 'Serializable',
     });
   }
 }

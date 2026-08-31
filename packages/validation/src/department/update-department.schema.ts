@@ -3,6 +3,4 @@ import { z } from "zod";
 
 export const updateDepartmentSchema = createDepartmentSchema.partial();
 
-export type UpdateDepartmentInput = z.infer<
-  typeof updateDepartmentSchema
->;
+export type UpdateDepartmentInput = z.infer<typeof updateDepartmentSchema>;

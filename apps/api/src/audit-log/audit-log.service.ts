@@ -15,21 +15,24 @@ interface CreateAuditLogInput {
 export class AuditLogService {
   constructor(private readonly auditLogRepository: AuditLogRepository) {}
 
-  create(input: CreateAuditLogInput) {
-    return this.auditLogRepository.create({
-      action: input.action,
-      entityType: input.entityType,
-      entityId: input.entityId,
-      metadata: input.metadata,
+  create(input: CreateAuditLogInput, transaction?: Prisma.TransactionClient) {
+    return this.auditLogRepository.create(
+      {
+        action: input.action,
+        entityType: input.entityType,
+        entityId: input.entityId,
+        metadata: input.metadata,
 
-      ...(input.actorUserId && {
-        actorUser: {
-          connect: {
-            id: input.actorUserId,
+        ...(input.actorUserId && {
+          actorUser: {
+            connect: {
+              id: input.actorUserId,
+            },
           },
-        },
-      }),
-    });
+        }),
+      },
+      transaction,
+    );
   }
   async findRecent() {
     const logs = await this.auditLogRepository.findRecent(50);
