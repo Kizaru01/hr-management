@@ -3,6 +3,8 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Sheet, useSheetController } from "@/components/sheet";
+import { Button } from "@/components/ui/button";
+import { Feedback as FeedbackMessage } from "@/components/ui/feedback";
 import type { Position, PositionDepartmentSummary } from "../types/position";
 import { PositionDetails } from "./position-details";
 import { PositionForm } from "./position-form";
@@ -41,11 +43,11 @@ export function PositionManagement({
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-3 border-b border-foreground/15 pb-5 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-foreground/60">
+      <div className="flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-muted-foreground">
           {positions.length} {positions.length === 1 ? "position" : "positions"}
         </p>
-        <button
+        <Button
           type="button"
           aria-haspopup="dialog"
           aria-controls="position-sheet"
@@ -59,27 +61,23 @@ export function PositionManagement({
             setFeedback(null);
             sheet.openSheet({ type: "create" }, event.currentTarget);
           }}
-          className="inline-flex w-fit items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus aria-hidden="true" size={17} />
           Create position
-        </button>
+        </Button>
       </div>
 
       {!department.isActive ? (
-        <p className="rounded-md border border-foreground/20 bg-foreground/5 px-4 py-3 text-sm text-foreground/70">
+        <FeedbackMessage tone="warning">
           This department is inactive. Existing positions remain available to
           review, but new positions cannot be created.
-        </p>
+        </FeedbackMessage>
       ) : null}
 
       {feedback ? (
-        <p
-          role={feedback.type === "error" ? "alert" : "status"}
-          className="rounded-md border border-foreground/20 px-4 py-3 text-sm text-foreground/70"
-        >
+        <FeedbackMessage tone={feedback.type}>
           {feedback.message}
-        </p>
+        </FeedbackMessage>
       ) : null}
 
       <PositionList

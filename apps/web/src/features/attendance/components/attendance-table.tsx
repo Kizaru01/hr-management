@@ -1,5 +1,7 @@
 import type { DailyAttendanceRecord } from "../types/attendance";
 import { AttendanceRow } from "./attendance-row";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Table, TableShell } from "@/components/ui/table";
 
 interface AttendanceTableProps {
   records: DailyAttendanceRecord[];
@@ -21,26 +23,20 @@ export const AttendanceTable = ({
 }: AttendanceTableProps) => {
   if (records.length === 0) {
     return (
-      <div className="rounded-xl border px-6 py-12 text-center">
-        <p className="font-medium">{emptyMessage}</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          There are no daily attendance records to display.
-        </p>
-      </div>
+      <EmptyState
+        title={emptyMessage}
+        description="There are no daily attendance records to display."
+      />
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border">
-      <table className="w-full text-sm">
-        <thead className="border-b bg-muted/50">
+    <TableShell>
+      <Table className="min-w-[720px]">
+        <thead>
           <tr>
             {headers.map((header) => (
-              <th
-                key={header}
-                scope="col"
-                className="whitespace-nowrap px-4 py-3 text-left"
-              >
+              <th key={header} scope="col" className="whitespace-nowrap">
                 {header}
               </th>
             ))}
@@ -55,7 +51,7 @@ export const AttendanceTable = ({
             />
           ))}
         </tbody>
-      </table>
-    </div>
+      </Table>
+    </TableShell>
   );
 };

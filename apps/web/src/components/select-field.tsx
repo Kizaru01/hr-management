@@ -1,3 +1,5 @@
+import { Select } from "@/components/ui/form-controls";
+
 interface SelectFieldProps {
   label: string;
   name: string;
@@ -18,21 +20,20 @@ export const SelectField = ({
   options,
   onChange,
 }: SelectFieldProps) => (
-  <label className="space-y-1">
-    <span className="text-sm font-medium">{label}</span>
+  <label className="grid gap-1.5">
+    <span className="control-label">{label}</span>
 
-    <select
+    <Select
       name={name}
       value={value}
-      defaultValue={value ? undefined : defaultValue ?? undefined}
+      defaultValue={value ? undefined : (defaultValue ?? undefined)}
       onChange={onChange}
-      className="w-full rounded-md border px-3 py-2"
     >
       {options.map((option) => (
         <option key={option.value} value={option.value}>
           {option.label}
         </option>
       ))}
-    </select>
+    </Select>
   </label>
 );

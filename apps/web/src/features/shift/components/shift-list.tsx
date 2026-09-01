@@ -6,10 +6,14 @@ import { ApiError } from "@/lib/api/api.client";
 import { deactivateShift } from "../api/deactivate-shift";
 import type { ShiftSummary } from "../types/shift";
 import { formatShiftSchedule } from "../utils/shift-formatters";
-import { EditShiftDialog } from "./edit-shift-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Feedback as FeedbackMessage } from "@/components/ui/feedback";
 
 interface ShiftListProps {
   shifts: ShiftSummary[];
+  onEdit: (shift: ShiftSummary, trigger: HTMLButtonElement) => void;
 }
 
 type Feedback = {
@@ -20,9 +24,8 @@ type Feedback = {
 const desktopColumns =
   "md:grid-cols-[minmax(0,1.3fr)_minmax(11rem,1fr)_minmax(6rem,0.55fr)_minmax(10rem,0.7fr)]";
 
-export const ShiftList = ({ shifts }: ShiftListProps) => {
+export const ShiftList = ({ shifts, onEdit }: ShiftListProps) => {
   const router = useRouter();
-  const [editingShift, setEditingShift] = useState<ShiftSummary | null>(null);
   const [pendingDeactivateId, setPendingDeactivateId] = useState<string | null>(
     null,
   );
@@ -62,118 +65,89 @@ export const ShiftList = ({ shifts }: ShiftListProps) => {
     }
   };
 
-  const handleEditSuccess = (message: string) => {
-    setEditingShift(null);
-    setFeedback({ type: "success", message });
-    router.refresh();
-  };
-
   if (shifts.length === 0) {
     return (
-      <div className="rounded-xl border border-foreground/25 px-6 py-12 text-center">
-        <p className="font-medium">No shifts found.</p>
-        <p className="mt-1 text-sm text-foreground/60">
-          Create the first shift to make it available for assignment.
-        </p>
-      </div>
+      <EmptyState
+        title="No shifts found"
+        description="Create the first shift to make it available for assignment."
+      />
     );
   }
 
   return (
-    <>
-      <div className="space-y-3">
-        {feedback ? (
-          <p
-            role={feedback.type === "error" ? "alert" : "status"}
-            className={`rounded-md border border-foreground/20 px-4 py-3 text-sm ${
-              feedback.type === "error"
-                ? "text-red-700 dark:text-red-400"
-                : "text-foreground/70"
-            }`}
-          >
-            {feedback.message}
-          </p>
-        ) : null}
+    <div className="space-y-3">
+      {feedback ? (
+        <FeedbackMessage tone={feedback.type}>
+          {feedback.message}
+        </FeedbackMessage>
+      ) : null}
 
-        <section
-          aria-label="Configured shifts"
-          className="overflow-hidden rounded-xl border border-foreground/25"
+      <section aria-label="Configured shifts" className="table-shell">
+        <div
+          className={`hidden gap-4 border-b border-border bg-hover px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:grid ${desktopColumns}`}
         >
-          <div
-            className={`hidden gap-4 border-b border-foreground/20 bg-foreground/5 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/55 md:grid ${desktopColumns}`}
-          >
-            <span>Shift</span>
-            <span>Schedule</span>
-            <span>Status</span>
-            <span>Actions</span>
-          </div>
+          <span>Shift</span>
+          <span>Schedule</span>
+          <span>Status</span>
+          <span>Actions</span>
+        </div>
 
-          <ul className="divide-y divide-foreground/15">
-            {shifts.map((shift) => (
-              <li
-                key={shift.id}
-                className={`grid min-w-0 gap-3 px-4 py-4 sm:px-5 md:items-center md:gap-4 ${desktopColumns}`}
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">{shift.name}</p>
-                  <p className="mt-0.5 text-xs text-foreground/50 md:hidden">
-                    Shift
-                  </p>
-                </div>
-
-                <p className="text-sm text-foreground/70">
-                  {formatShiftSchedule(shift.startTime, shift.endTime)}
+        <ul className="divide-y divide-border">
+          {shifts.map((shift) => (
+            <li
+              key={shift.id}
+              className={`grid min-w-0 gap-3 px-4 py-4 sm:px-5 md:items-center md:gap-4 ${desktopColumns}`}
+            >
+              <div className="min-w-0">
+                <p className="truncate font-medium">{shift.name}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground md:hidden">
+                  Shift
                 </p>
+              </div>
 
-                <div>
-                  <span
-                    className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${
-                      shift.isActive
-                        ? "border-foreground/25 bg-foreground/5 text-foreground"
-                        : "border-foreground/15 text-foreground/50"
-                    }`}
-                  >
-                    {shift.isActive ? "Active" : "Inactive"}
-                  </span>
-                </div>
+              <p className="text-sm text-secondary-foreground">
+                {formatShiftSchedule(shift.startTime, shift.endTime)}
+              </p>
 
-                <div className="flex flex-wrap gap-2">
-                  <button
+              <div>
+                <Badge variant={shift.isActive ? "success" : "neutral"}>
+                  {shift.isActive ? "Active" : "Inactive"}
+                </Badge>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="small"
+                  aria-haspopup="dialog"
+                  aria-controls="shift-sheet"
+                  onClick={(event) => {
+                    setFeedback(null);
+                    onEdit(shift, event.currentTarget);
+                  }}
+                  disabled={pendingDeactivateId !== null}
+                >
+                  Edit
+                </Button>
+                {shift.isActive ? (
+                  <Button
                     type="button"
-                    onClick={() => {
-                      setFeedback(null);
-                      setEditingShift(shift);
-                    }}
+                    variant="destructive"
+                    size="small"
+                    onClick={() => handleDeactivate(shift)}
                     disabled={pendingDeactivateId !== null}
-                    className="rounded-md border border-foreground/25 px-3 py-1.5 text-sm font-medium hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Edit
-                  </button>
-                  {shift.isActive ? (
-                    <button
-                      type="button"
-                      onClick={() => handleDeactivate(shift)}
-                      disabled={pendingDeactivateId !== null}
-                      className="rounded-md border border-foreground/25 px-3 py-1.5 text-sm font-medium text-foreground/70 hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {pendingDeactivateId === shift.id
-                        ? "Deactivating..."
-                        : "Deactivate"}
-                    </button>
-                  ) : null}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      </div>
-
-      <EditShiftDialog
-        key={editingShift?.id ?? "closed"}
-        shift={editingShift}
-        onClose={() => setEditingShift(null)}
-        onSuccess={handleEditSuccess}
-      />
-    </>
+                    {pendingDeactivateId === shift.id
+                      ? "Deactivating..."
+                      : "Deactivate"}
+                  </Button>
+                ) : null}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
   );
 };

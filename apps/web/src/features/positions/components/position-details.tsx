@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError } from "@/lib/api/api.client";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { changePositionStatus } from "../api/change-position-status";
 import type { Position } from "../types/position";
 import { formatPositionDate } from "../utils/position-formatters";
@@ -59,11 +61,14 @@ export function PositionDetails({
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-foreground/15 pb-5">
+      <div className="border-b border-border pb-5">
         <h3 className="break-words text-lg font-semibold">{position.name}</h3>
-        <span className="mt-3 inline-flex rounded-full border border-foreground/20 bg-foreground/5 px-2 py-0.5 text-xs font-medium">
+        <Badge
+          variant={position.isActive ? "success" : "neutral"}
+          className="mt-3"
+        >
           {position.isActive ? "Active" : "Inactive"}
-        </span>
+        </Badge>
       </div>
 
       <dl className="grid gap-4">
@@ -77,12 +82,15 @@ export function PositionDetails({
         />
       </dl>
 
-      <dl className="grid gap-4 border-t border-foreground/15 pt-5 sm:grid-cols-2">
+      <dl className="grid gap-4 border-t border-border pt-5 sm:grid-cols-2">
         <Detail
           label="Active employees"
           value={String(position.activeEmployeeCount)}
         />
-        <Detail label="Created" value={formatPositionDate(position.createdAt)} />
+        <Detail
+          label="Created"
+          value={formatPositionDate(position.createdAt)}
+        />
         <Detail
           label="Last updated"
           value={formatPositionDate(position.updatedAt)}
@@ -90,25 +98,20 @@ export function PositionDetails({
       </dl>
 
       {errorMessage ? (
-        <p role="alert" className="text-sm text-red-700 dark:text-red-400">
+        <p role="alert" className="text-sm text-destructive">
           {errorMessage}
         </p>
       ) : null}
 
-      <div className="grid gap-2 border-t border-foreground/15 pt-5 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={onEdit}
-          disabled={isChangingStatus}
-          className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
-        >
+      <div className="grid gap-2 border-t border-border pt-5 sm:grid-cols-2">
+        <Button type="button" onClick={onEdit} disabled={isChangingStatus}>
           Edit position
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant={position.isActive ? "destructive" : "secondary"}
           onClick={handleStatusChange}
           disabled={isChangingStatus}
-          className="rounded-md border border-foreground/25 px-4 py-2 text-sm font-medium hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isChangingStatus
             ? position.isActive
@@ -117,7 +120,7 @@ export function PositionDetails({
             : position.isActive
               ? "Deactivate"
               : "Reactivate"}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -126,7 +129,7 @@ export function PositionDetails({
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs font-semibold uppercase tracking-wide text-foreground/50">
+      <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </dt>
       <dd className="mt-2 break-words text-sm leading-6 [overflow-wrap:anywhere]">

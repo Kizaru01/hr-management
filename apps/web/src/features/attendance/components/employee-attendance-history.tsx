@@ -5,6 +5,8 @@ import {
   formatAttendanceMinutes,
   formatAttendanceTime,
 } from "../utils/attendance-formatters";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Table, TableShell } from "@/components/ui/table";
 
 interface EmployeeAttendanceHistoryProps {
   records: EmployeeAttendanceHistoryRecord[];
@@ -26,20 +28,17 @@ export const EmployeeAttendanceHistory = ({
     <h2 className="text-lg font-semibold">Attendance History</h2>
 
     {records.length === 0 ? (
-      <div className="rounded-xl border px-6 py-8 text-center text-sm text-muted-foreground">
-        No attendance records found for this date range.
-      </div>
+      <EmptyState
+        title="No attendance records found"
+        description="There are no records for the selected date range."
+      />
     ) : (
-      <div className="overflow-x-auto rounded-xl border">
-        <table className="w-full text-sm">
-          <thead className="border-b bg-muted/50">
+      <TableShell>
+        <Table className="min-w-[680px]">
+          <thead>
             <tr>
               {headers.map((header) => (
-                <th
-                  key={header}
-                  scope="col"
-                  className="whitespace-nowrap px-4 py-3 text-left"
-                >
+                <th key={header} scope="col" className="whitespace-nowrap">
                   {header}
                 </th>
               ))}
@@ -50,7 +49,7 @@ export const EmployeeAttendanceHistory = ({
             {records.map((record) => (
               <tr
                 key={`${record.workDate}-${record.checkInAt}`}
-                className="border-b last:border-0"
+                className="last:border-0"
               >
                 <td className="whitespace-nowrap px-4 py-4">
                   {formatAttendanceDate(record.workDate)}
@@ -75,8 +74,8 @@ export const EmployeeAttendanceHistory = ({
               </tr>
             ))}
           </tbody>
-        </table>
-      </div>
+        </Table>
+      </TableShell>
     )}
   </section>
 );

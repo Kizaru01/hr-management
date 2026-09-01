@@ -1,26 +1,334 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  --background: #f8fafc;
+  --sidebar: #ffffff;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f1f5f9;
+  --surface-selected: #eff6ff;
+  --foreground: #0f172a;
+  --foreground-secondary: #475569;
+  --foreground-muted: #64748b;
+  --foreground-disabled: #94a3b8;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --success: #15803d;
+  --success-surface: #f0fdf4;
+  --success-border: #bbf7d0;
+  --warning: #b45309;
+  --warning-surface: #fffbeb;
+  --warning-border: #fde68a;
+  --destructive: #dc2626;
+  --destructive-surface: #fef2f2;
+  --destructive-border: #fecaca;
+  --info: #2563eb;
+  --info-foreground: #ffffff;
+  --info-surface: #eff6ff;
+  --info-border: #bfdbfe;
+  --focus-ring: #2563eb;
+  --overlay: rgb(15 23 42 / 58%);
+
+  --ds-radius-control: 7px;
+  --ds-radius-card: 10px;
+  --ds-radius-container: 12px;
+  --elevation-card: 0 1px 2px rgb(15 23 42 / 0.05);
+  --elevation-overlay: 0 8px 24px rgb(15 23 42 / 0.08);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --background: #080808;
+  --sidebar: #050505;
+  --surface: #0d0d0d;
+  --surface-elevated: #121212;
+  --surface-hover: #151515;
+  --surface-selected: #191919;
+  --foreground: #f5f5f5;
+  --foreground-secondary: #a3a3a3;
+  --foreground-muted: #737373;
+  --foreground-disabled: #525252;
+  --border: rgb(255 255 255 / 13%);
+  --border-strong: rgb(255 255 255 / 20%);
+
+  --primary: #f5f5f5;
+  --primary-foreground: #080808;
+  --success: #4ade80;
+  --success-surface: rgb(22 163 74 / 14%);
+  --success-border: rgb(74 222 128 / 28%);
+  --warning: #fbbf24;
+  --warning-surface: rgb(245 158 11 / 14%);
+  --warning-border: rgb(251 191 36 / 28%);
+  --destructive: #f87171;
+  --destructive-surface: rgb(239 68 68 / 13%);
+  --destructive-border: rgb(248 113 113 / 28%);
+  --info: #60a5fa;
+  --info-foreground: #ffffff;
+  --info-surface: rgb(59 130 246 / 14%);
+  --info-border: rgb(96 165 250 / 28%);
+  --focus-ring: #60a5fa;
+  --overlay: rgb(0 0 0 / 70%);
+
+  --elevation-card: none;
+  --elevation-overlay: 0 8px 24px rgb(0 0 0 / 45%);
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-sidebar: var(--sidebar);
+  --color-surface: var(--surface);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--foreground);
+  --color-popover: var(--surface-elevated);
+  --color-popover-foreground: var(--foreground);
+  --color-elevated: var(--surface-elevated);
+  --color-hover: var(--surface-hover);
+  --color-muted: var(--surface-hover);
+  --color-selected: var(--surface-selected);
   --color-foreground: var(--foreground);
+  --color-secondary-foreground: var(--foreground-secondary);
+  --color-muted-foreground: var(--foreground-muted);
+  --color-disabled-foreground: var(--foreground-disabled);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--border-strong);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-success: var(--success);
+  --color-success-surface: var(--success-surface);
+  --color-success-border: var(--success-border);
+  --color-warning: var(--warning);
+  --color-warning-surface: var(--warning-surface);
+  --color-warning-border: var(--warning-border);
+  --color-destructive: var(--destructive);
+  --color-destructive-surface: var(--destructive-surface);
+  --color-destructive-border: var(--destructive-border);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-surface: var(--info-surface);
+  --color-info-border: var(--info-border);
+  --color-ring: var(--focus-ring);
+  --color-overlay: var(--overlay);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --radius-control: var(--ds-radius-control);
+  --radius-card: var(--ds-radius-card);
+  --radius-container: var(--ds-radius-container);
+  --radius-sm: 6px;
+  --radius-md: var(--ds-radius-control);
+  --radius-lg: var(--ds-radius-card);
+  --radius-xl: var(--ds-radius-card);
+  --shadow-card: var(--elevation-card);
+  --shadow-overlay: var(--elevation-overlay);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    box-sizing: border-box;
+    border-color: var(--border);
+  }
+
+  html {
+    min-width: 320px;
+    background: var(--background);
+  }
+
+  body {
+    min-height: 100vh;
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  p {
+    margin: 0;
+  }
+
+  h1 {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 32px;
+  }
+
+  h2 {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 28px;
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not(
+      [type="hidden"]
+    ),
+  select {
+    min-height: 40px;
+    border-color: var(--border-strong);
+    border-radius: var(--ds-radius-control);
+    background: var(--surface);
+    color: var(--foreground);
+  }
+
+  textarea {
+    border-color: var(--border-strong);
+    border-radius: var(--ds-radius-control);
+    background: var(--surface);
+    color: var(--foreground);
+  }
+
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    background: var(--surface-hover);
+    color: var(--foreground-disabled);
+  }
+
+  input[aria-invalid="true"],
+  select[aria-invalid="true"],
+  textarea[aria-invalid="true"] {
+    border-color: var(--destructive);
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    border-color: var(--focus-ring);
+    outline: 2px solid color-mix(in srgb, var(--focus-ring) 25%, transparent);
+    outline-offset: 1px;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--info);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  ::placeholder {
+    color: var(--foreground-disabled);
+    opacity: 1;
+  }
+
+  ::selection {
+    background: var(--info-surface);
+    color: var(--foreground);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .page-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .table-shell {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--ds-radius-card);
+    background: var(--surface);
+    box-shadow: var(--elevation-card);
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  .data-table thead {
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-hover);
+  }
+
+  .data-table th {
+    padding: 12px 16px;
+    color: var(--foreground-muted);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 16px;
+    letter-spacing: 0.04em;
+    text-align: left;
+    text-transform: uppercase;
+  }
+
+  .data-table td {
+    padding: 16px;
+    vertical-align: middle;
+  }
+
+  .data-table tbody tr {
+    min-height: 60px;
+    border-bottom: 1px solid var(--border);
+    transition: background-color 150ms ease;
+  }
+
+  .data-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .data-table tbody tr:hover {
+    background: var(--surface-hover);
+  }
+
+  .control-label {
+    color: var(--foreground);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 18px;
+  }
+
+  .control-help {
+    color: var(--foreground-muted);
+    font-size: 12px;
+    line-height: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

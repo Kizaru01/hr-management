@@ -1,13 +1,12 @@
+import { PageHeader } from "@/components/ui/page-header";
+
 export default async function EmployeeDashboardPage() {
   return (
-    <section>
-      <h1 className="text-2xl font-semibold">
-        Dashboard
-      </h1>
-
-      <p className="mt-1 text-sm text-muted-foreground">
-        Welcome to your employee dashboard.
-      </p>
+    <section className="page-stack">
+      <PageHeader
+        title="Dashboard"
+        description="Welcome to your employee dashboard."
+      />
     </section>
   );
 }

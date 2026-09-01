@@ -2,6 +2,8 @@
 
 import { Plus } from "lucide-react";
 import { Sheet, useSheetController } from "@/components/sheet";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import type { LookupOption } from "@/features/employee/types/employee";
 import type { ManagedAnnouncement } from "../types/announcement";
 import { AnnouncementDetails } from "./announcement-details";
@@ -15,8 +17,7 @@ interface AnnouncementManagementProps {
 }
 
 type AnnouncementSheetContent =
-  | { type: "create" }
-  | { type: "details"; announcement: ManagedAnnouncement };
+  { type: "create" } | { type: "details"; announcement: ManagedAnnouncement };
 
 export function AnnouncementManagement({
   announcements,
@@ -28,28 +29,24 @@ export function AnnouncementManagement({
     sheet.content?.type === "details" ? sheet.content.announcement : null;
 
   return (
-    <section className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Announcements</h1>
-          <p className="mt-1 text-sm text-foreground/60">
-            Publish and review organization announcements.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          aria-haspopup="dialog"
-          aria-controls="announcement-sheet"
-          onClick={(event) =>
-            sheet.openSheet({ type: "create" }, event.currentTarget)
-          }
-          className="inline-flex w-fit items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        >
-          <Plus aria-hidden="true" size={17} />
-          Create announcement
-        </button>
-      </header>
+    <section className="page-stack">
+      <PageHeader
+        title="Announcements"
+        description="Publish and review organization announcements."
+        actions={
+          <Button
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="announcement-sheet"
+            onClick={(event) =>
+              sheet.openSheet({ type: "create" }, event.currentTarget)
+            }
+          >
+            <Plus aria-hidden="true" size={17} />
+            Create announcement
+          </Button>
+        }
+      />
 
       <ManagedAnnouncements
         announcements={announcements}

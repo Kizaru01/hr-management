@@ -2,9 +2,10 @@ import { getBranches } from "@/features/branch/server/get-branches";
 import { getDepartments } from "@/features/departments/server/get-departments";
 import { EmployeeEditForm } from "@/features/employee/components/employee-edit-form";
 import { getEmployee } from "@/features/employee/server/get-employee";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface Props {
-  params: Promise<{ id: string}>
+  params: Promise<{ id: string }>;
 }
 
 export default async function EditEmployeePage({ params }: Props) {
@@ -26,11 +27,25 @@ export default async function EditEmployeePage({ params }: Props) {
     value: item.id,
   }));
 
+  const fullName = [
+    employee.data.firstName,
+    employee.data.middleName,
+    employee.data.lastName,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <EmployeeEditForm
-      employee={employee.data}
-      departments={departmentOptions}
-      branches={branchOptions}
-    />
+    <div className="page-stack mx-auto w-full max-w-5xl">
+      <PageHeader
+        title="Edit employee"
+        description={`Update the employee record for ${fullName}.`}
+      />
+      <EmployeeEditForm
+        employee={employee.data}
+        departments={departmentOptions}
+        branches={branchOptions}
+      />
+    </div>
   );
 }

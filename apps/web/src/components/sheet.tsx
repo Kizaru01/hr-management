@@ -25,7 +25,7 @@ export function Sheet({
   onAfterClose,
   children,
   autoFocusClose = false,
-  bodyClassName = "px-5 py-6 sm:px-6",
+  bodyClassName = "px-5 py-5 sm:px-6",
 }: SheetProps) {
   const titleId = `${id}-title`;
   const descriptionId = `${id}-description`;
@@ -59,14 +59,14 @@ export function Sheet({
       onClick={handleDialogClick}
       onKeyDown={handleDialogKeyDown}
       onClose={onAfterClose}
-      className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-none w-full max-w-[30rem] border-0 border-l border-foreground/30 bg-background p-0 text-foreground backdrop:bg-black/70 open:flex open:flex-col"
+      className="fixed inset-y-0 right-0 left-auto m-0 h-dvh max-h-none w-full max-w-[30rem] border-0 border-l border-border-strong bg-elevated p-0 text-foreground shadow-overlay backdrop:bg-overlay open:flex open:flex-col"
     >
-      <header className="flex items-start justify-between gap-4 border-b border-foreground/20 px-5 py-4 sm:px-6">
+      <header className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-6">
         <div>
           <h2 id={titleId} className="text-lg font-semibold">
             {title}
           </h2>
-          <p id={descriptionId} className="mt-1 text-sm text-foreground/60">
+          <p id={descriptionId} className="mt-1 text-sm text-muted-foreground">
             {description}
           </p>
         </div>
@@ -76,7 +76,7 @@ export function Sheet({
           data-sheet-initial-focus={autoFocusClose ? "" : undefined}
           aria-label={`Close ${title.toLowerCase()}`}
           onClick={onRequestClose}
-          className="-mr-2 flex size-10 shrink-0 items-center justify-center rounded-md text-foreground/70 transition hover:bg-foreground/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="-mr-2 flex size-9 shrink-0 items-center justify-center rounded-control text-muted-foreground transition hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-elevated"
         >
           <X aria-hidden="true" size={20} />
         </button>

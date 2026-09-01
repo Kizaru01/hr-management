@@ -3,52 +3,54 @@ import {
   formatAnnouncementAudience,
   formatAnnouncementTimestamp,
 } from "../utils/announcement-formatters";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface AnnouncementFeedProps {
   announcements: Announcement[];
 }
 
-export const AnnouncementFeed = ({
-  announcements,
-}: AnnouncementFeedProps) => {
+export const AnnouncementFeed = ({ announcements }: AnnouncementFeedProps) => {
   if (announcements.length === 0) {
     return (
-      <section className="rounded-lg border p-8 text-center shadow-sm">
-        <p className="text-sm text-gray-600">No announcements available.</p>
-      </section>
+      <EmptyState
+        title="No announcements available"
+        description="Published organization updates will appear here."
+      />
     );
   }
 
   return (
     <section className="grid gap-4">
       {announcements.map((announcement) => (
-        <article
-          key={announcement.id}
-          className="rounded-lg border p-6 shadow-sm"
-        >
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <h2 className="text-lg font-semibold">{announcement.title}</h2>
-            <span className="w-fit shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
-              {formatAnnouncementAudience(announcement)}
-            </span>
-          </div>
+        <Card key={announcement.id}>
+          <CardContent>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <h2 className="text-lg font-semibold">{announcement.title}</h2>
+              <Badge className="shrink-0">
+                {formatAnnouncementAudience(announcement)}
+              </Badge>
+            </div>
 
-          <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-gray-700">
-            {announcement.content}
-          </p>
+            <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-secondary-foreground">
+              {announcement.content}
+            </p>
 
-          <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-4 text-xs text-gray-600">
-            <span>
-              Published {formatAnnouncementTimestamp(announcement.publishedAt)}
-            </span>
-            {announcement.expiresAt ? (
+            <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-4 text-xs text-muted-foreground">
               <span>
-                Expires {formatAnnouncementTimestamp(announcement.expiresAt)}
+                Published{" "}
+                {formatAnnouncementTimestamp(announcement.publishedAt)}
               </span>
-            ) : null}
-            <span>Created by {announcement.createdBy.name}</span>
-          </div>
-        </article>
+              {announcement.expiresAt ? (
+                <span>
+                  Expires {formatAnnouncementTimestamp(announcement.expiresAt)}
+                </span>
+              ) : null}
+              <span>Created by {announcement.createdBy.name}</span>
+            </div>
+          </CardContent>
+        </Card>
       ))}
     </section>
   );

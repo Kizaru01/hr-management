@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 
 import { assignManager } from "../api/assign-manager";
 import type { ManagerOption } from "../types/employee";
+import { Dialog } from "@/components/dialog";
+import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/form-controls";
 
 interface Props {
   employeeId: string;
@@ -25,52 +28,57 @@ export const AssignManagerDialog = ({ employeeId, options }: Props) => {
     router.refresh();
   };
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="rounded-md border px-3 py-2 text-sm"
-      >
-        Assign Manager
-      </button>
-    );
-  }
-
   return (
-    <div className="space-y-3 rounded-md border p-4">
-      <select
-        value={managerId}
-        onChange={(event) => setManagerId(event.target.value)}
-        className="w-full rounded-md border px-3 py-2"
-      >
-        <option value="">Select manager</option>
+    <>
+      <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
+        Assign Manager
+      </Button>
 
-        {options.map((manager) => (
-          <option key={manager.id} value={manager.id}>
-            {manager.name}
-          </option>
-        ))}
-      </select>
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={handleAssign}
-          disabled={!managerId}
-          className="rounded-md border px-3 py-2 text-sm"
+      {open ? (
+        <Dialog
+          id="assign-manager-dialog"
+          title="Assign manager"
+          description="Choose an active employee to manage this employee."
+          onRequestClose={() => setOpen(false)}
         >
-          Save
-        </button>
+          <div className="space-y-4">
+            <label className="grid gap-1.5">
+              <span className="control-label">Manager</span>
+              <Select
+                value={managerId}
+                onChange={(event) => setManagerId(event.target.value)}
+                data-dialog-initial-focus
+              >
+                <option value="">Select manager</option>
 
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="rounded-md border px-3 py-2 text-sm"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
+                {options.map((manager) => (
+                  <option key={manager.id} value={manager.id}>
+                    {manager.name}
+                  </option>
+                ))}
+              </Select>
+            </label>
+
+            <div className="flex justify-end gap-2 border-t border-border pt-4">
+              <Button
+                type="button"
+                onClick={handleAssign}
+                disabled={!managerId}
+              >
+                Save
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </Dialog>
+      ) : null}
+    </>
   );
 };

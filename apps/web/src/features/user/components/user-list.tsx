@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
 import { ApiError } from "@/lib/api/api.client";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { activateUserAccess } from "../api/activate-user-access";
 import { deactivateUserAccess } from "../api/deactivate-user-access";
 import { updateUserRole } from "../api/update-user-role";
@@ -151,9 +153,10 @@ export function UserList({
 
   if (users.length === 0) {
     return (
-      <div className="rounded-xl border border-foreground/25 px-6 py-12 text-center">
-        <p className="font-medium">No user accounts found.</p>
-      </div>
+      <EmptyState
+        title="No user accounts found"
+        description="Created sign-in accounts will appear here."
+      />
     );
   }
 
@@ -161,7 +164,7 @@ export function UserList({
     <div className="min-w-0 space-y-3">
       <div>
         <h2 className="font-semibold">Accounts</h2>
-        <p className="mt-1 text-sm text-foreground/60">
+        <p className="mt-1 text-sm text-muted-foreground">
           Access changes take effect on the next authenticated API request.
         </p>
       </div>
@@ -169,22 +172,17 @@ export function UserList({
       {feedback ? (
         <p
           role={feedback.type === "error" ? "alert" : "status"}
-          className={`rounded-md border border-foreground/20 px-4 py-3 text-sm ${
-            feedback.type === "error"
-              ? "text-red-700 dark:text-red-400"
-              : "text-foreground/70"
+          className={`rounded-md border border-border px-4 py-3 text-sm ${
+            feedback.type === "error" ? "text-destructive" : "text-success"
           }`}
         >
           {feedback.message}
         </p>
       ) : null}
 
-      <section
-        aria-label="User accounts"
-        className="overflow-hidden rounded-xl border border-foreground/25"
-      >
+      <section aria-label="User accounts" className="table-shell">
         <div
-          className={`hidden gap-4 border-b border-foreground/20 bg-foreground/5 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/55 lg:grid ${desktopColumns}`}
+          className={`hidden gap-4 border-b border-border bg-hover px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground lg:grid ${desktopColumns}`}
         >
           <span>User</span>
           <span>Role</span>
@@ -194,7 +192,7 @@ export function UserList({
           <span>Access</span>
         </div>
 
-        <ul className="divide-y divide-foreground/15">
+        <ul className="divide-y divide-border">
           {users.map((user) => {
             const draftRole = draftRoles[user.id] ?? user.role;
             const isCurrentUser = user.id === currentUserId;
@@ -229,32 +227,30 @@ export function UserList({
                     onSelect(user, event.currentTarget);
                   }
                 }}
-                className={`grid min-w-0 cursor-pointer gap-4 px-4 py-5 transition hover:bg-foreground/[0.03] focus-visible:bg-foreground/[0.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-foreground sm:px-5 lg:items-center ${desktopColumns} ${
-                  isSelected ? "bg-foreground/[0.04]" : ""
+                className={`grid min-w-0 cursor-pointer gap-4 px-4 py-5 transition hover:bg-hover focus-visible:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-5 lg:items-center ${desktopColumns} ${
+                  isSelected ? "bg-selected" : ""
                 }`}
               >
                 <div className="flex min-w-0 items-start gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{user.email}</p>
                     {user.linkedEmployee ? (
-                      <div className="mt-1 text-xs leading-5 text-foreground/55">
+                      <div className="mt-1 text-xs leading-5 text-muted-foreground">
                         <p className="truncate">{user.linkedEmployee.name}</p>
                         <p>
                           {user.linkedEmployee.employeeNumber}
-                          {isTerminatedEmployee
-                            ? " · Terminated employee"
-                            : ""}
+                          {isTerminatedEmployee ? " · Terminated employee" : ""}
                         </p>
                       </div>
                     ) : (
-                      <p className="mt-1 text-xs text-foreground/45">
+                      <p className="mt-1 text-xs text-disabled-foreground">
                         No linked employee
                       </p>
                     )}
                     {isCurrentUser ? (
-                      <span className="mt-2 inline-flex rounded-full border border-foreground/20 px-2 py-0.5 text-xs font-medium">
+                      <Badge variant="info" className="mt-2">
                         Current account
-                      </span>
+                      </Badge>
                     ) : null}
                   </div>
 
@@ -267,7 +263,7 @@ export function UserList({
                       event.stopPropagation();
                       onSelect(user, event.currentTarget);
                     }}
-                    className="shrink-0 rounded-md p-1.5 text-foreground/50 hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
+                    className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-hover hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <ChevronRight aria-hidden="true" className="size-4" />
                   </button>
@@ -290,7 +286,7 @@ export function UserList({
                       }))
                     }
                     disabled={pendingOperation !== null}
-                    className="min-w-0 rounded-md border border-foreground/25 bg-background px-2 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                    className="min-w-0 rounded-md border border-border-strong bg-background px-2 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {roles.map((role) => (
                       <option
@@ -319,23 +315,27 @@ export function UserList({
                         ? "Assign another active administrator first."
                         : undefined
                     }
-                    className="rounded-md border border-foreground/25 px-2 py-1.5 text-sm font-medium hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-md border border-border-strong px-2 py-1.5 text-sm font-medium hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {pendingOperation === roleOperation ? "Saving..." : "Save role"}
+                    {pendingOperation === roleOperation
+                      ? "Saving..."
+                      : "Save role"}
                   </button>
                 </div>
 
                 <div>
-                  <span className="inline-flex rounded-full border border-foreground/20 bg-foreground/5 px-2 py-0.5 text-xs font-medium">
+                  <Badge variant={accountStatusVariant(user)}>
                     {accountStatusLabel(user)}
-                  </span>
+                  </Badge>
                 </div>
 
-                <p className="text-sm text-foreground/65">
-                  {user.lastLoginAt ? formatDateTime(user.lastLoginAt) : "Never"}
+                <p className="text-sm text-secondary-foreground">
+                  {user.lastLoginAt
+                    ? formatDateTime(user.lastLoginAt)
+                    : "Never"}
                 </p>
 
-                <p className="text-sm text-foreground/65">
+                <p className="text-sm text-secondary-foreground">
                   {formatDate(user.createdAt)}
                 </p>
 
@@ -359,7 +359,7 @@ export function UserList({
                             ? "Assign another active administrator first."
                             : undefined
                       }
-                      className="rounded-md border border-foreground/25 px-3 py-1.5 text-sm font-medium text-foreground/70 hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-medium text-secondary-foreground hover:bg-hover hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {pendingOperation === deactivateOperation
                         ? "Deactivating..."
@@ -374,7 +374,7 @@ export function UserList({
                       type="button"
                       onClick={() => handleAccessChange(user, "activate")}
                       disabled={pendingOperation !== null}
-                      className="rounded-md border border-foreground/25 px-3 py-1.5 text-sm font-medium hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="rounded-md border border-border-strong px-3 py-1.5 text-sm font-medium hover:bg-hover disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {pendingOperation === activateOperation
                         ? "Activating..."
@@ -383,13 +383,13 @@ export function UserList({
                   ) : null}
 
                   {user.status === "pending" ? (
-                    <p className="text-xs leading-5 text-foreground/50">
+                    <p className="text-xs leading-5 text-muted-foreground">
                       Awaiting token activation
                     </p>
                   ) : null}
 
                   {isTerminatedEmployee && !user.isActive ? (
-                    <p className="text-xs leading-5 text-foreground/50">
+                    <p className="text-xs leading-5 text-muted-foreground">
                       Access remains blocked for the terminated employee record.
                     </p>
                   ) : null}
@@ -421,6 +421,22 @@ function accountStatusLabel(user: ManagedUser) {
   }
 
   return user.status.charAt(0).toUpperCase() + user.status.slice(1);
+}
+
+function accountStatusVariant(user: ManagedUser): BadgeVariant {
+  if (user.status === "pending") {
+    return "warning";
+  }
+
+  if (user.status === "active" && user.isActive) {
+    return "success";
+  }
+
+  return user.status === "disabled"
+    ? "destructive"
+    : user.status === "suspended"
+      ? "warning"
+      : "neutral";
 }
 
 function formatDate(value: string) {

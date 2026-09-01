@@ -1,24 +1,19 @@
-
-import { getHrDashboard } from '@/features/dashboard/server/get-hr-dashboard';
-import { AttendanceOverview } from '@/features/dashboard/components/attendance-overview-card';
-import { DashboardStatCard } from '@/features/dashboard/components/dashboard-stat-card';
-import { EmployeeOverview } from '@/features/dashboard/components/employee-overview';
+import { getHrDashboard } from "@/features/dashboard/server/get-hr-dashboard";
+import { AttendanceOverview } from "@/features/dashboard/components/attendance-overview-card";
+import { DashboardStatCard } from "@/features/dashboard/components/dashboard-stat-card";
+import { EmployeeOverview } from "@/features/dashboard/components/employee-overview";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function DashboardPage() {
   const response = await getHrDashboard();
   const dashboard = response.data;
 
   return (
-    <section className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">
-          Dashboard
-        </h1>
-
-        <p className="mt-1 text-sm text-muted-foreground">
-          Overview of today&apos;s HR activity.
-        </p>
-      </div>
+    <section className="page-stack">
+      <PageHeader
+        title="Dashboard"
+        description="Overview of today's HR activity."
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <DashboardStatCard
@@ -42,16 +37,12 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <AttendanceOverview
-          attendance={dashboard.attendanceToday}
-        />
+      <div className="grid gap-4 xl:grid-cols-2">
+        <AttendanceOverview attendance={dashboard.attendanceToday} />
 
         <EmployeeOverview
           employees={dashboard.employees}
-          activeAnnouncements={
-            dashboard.announcements.active
-          }
+          activeAnnouncements={dashboard.announcements.active}
         />
       </div>
     </section>

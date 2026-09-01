@@ -3,6 +3,7 @@ import {
   formatPerformanceReviewDate,
   formatPerformanceReviewRole,
 } from "../utils/performance-review-formatters";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface PerformanceReviewsListProps {
   reviews: PerformanceReview[];
@@ -25,13 +26,21 @@ export const PerformanceReviewsList = ({
   reviews,
 }: PerformanceReviewsListProps) => {
   if (reviews.length === 0) {
-    return;
+    return (
+      <EmptyState
+        title="No performance reviews"
+        description="Completed reviews will appear here."
+      />
+    );
   }
 
   return (
     <div className="space-y-4">
       {reviews.map((review) => (
-        <article key={review.id} className="rounded-xl border p-6 shadow-sm">
+        <article
+          key={review.id}
+          className="rounded-card border border-border bg-surface p-4 shadow-card"
+        >
           <div className="flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h3 className="font-semibold">

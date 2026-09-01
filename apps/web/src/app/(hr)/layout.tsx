@@ -25,10 +25,12 @@ export default async function HrLayout({ children }: HrLayoutProps) {
     <div className="min-h-screen bg-background">
       <HrSidebar user={user} />
 
-      <div className="lg:pl-64">
+      <div className="lg:pl-60">
         <HrHeader user={user} unreadCount={notificationResponse.data.count} />
 
-        <main className="p-4 sm:p-6">{children}</main>
+        <main className="mx-auto w-full max-w-[1920px] px-4 py-6 sm:px-6 sm:py-7">
+          {children}
+        </main>
       </div>
     </div>
   );

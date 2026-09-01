@@ -4,6 +4,8 @@ import {
   formatShiftSchedule,
   formatShiftWorkDays,
 } from "../utils/shift-formatters";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface EmployeeShiftHistoryProps {
   assignments: EmployeeShiftAssignment[];
@@ -23,22 +25,20 @@ export const EmployeeShiftHistory = ({
           Review this employee&apos;s complete assignment history.
         </p>
       </div>
-      <span className="shrink-0 rounded-full border border-foreground/20 bg-foreground/5 px-2.5 py-1 text-xs font-medium text-foreground/65">
+      <Badge className="shrink-0 px-2.5 py-1">
         {assignments.length} {assignments.length === 1 ? "record" : "records"}
-      </span>
+      </Badge>
     </div>
 
     {assignments.length === 0 ? (
-      <div className="rounded-xl border border-foreground/25 px-6 py-10 text-center">
-        <p className="font-medium">No shift assignments yet.</p>
-        <p className="mt-1 text-sm text-foreground/60">
-          Assign a shift to begin this employee&apos;s schedule history.
-        </p>
-      </div>
+      <EmptyState
+        title="No shift assignments yet"
+        description="Assign a shift to begin this employee's schedule history."
+      />
     ) : (
-      <div className="overflow-hidden rounded-xl border border-foreground/25">
+      <div className="table-shell">
         <div
-          className={`hidden gap-4 border-b border-foreground/20 bg-foreground/5 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/55 md:grid ${desktopColumns}`}
+          className={`hidden gap-4 border-b border-border bg-hover px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:grid ${desktopColumns}`}
         >
           <span>Shift</span>
           <span>Schedule</span>
@@ -46,7 +46,7 @@ export const EmployeeShiftHistory = ({
           <span>Effective period</span>
         </div>
 
-        <ol className="divide-y divide-foreground/15">
+        <ol className="divide-y divide-border">
           {assignments.map((assignment) => (
             <li
               key={assignment.id}
@@ -58,32 +58,30 @@ export const EmployeeShiftHistory = ({
                     {assignment.shift.name}
                   </p>
                   {!assignment.shift.isActive ? (
-                    <span className="rounded-full border border-foreground/15 px-2 py-0.5 text-xs text-foreground/50">
-                      Shift inactive
-                    </span>
+                    <Badge variant="neutral">Shift inactive</Badge>
                   ) : null}
                 </div>
               </div>
 
-              <p className="text-foreground/70">
+              <p className="text-secondary-foreground">
                 {formatShiftSchedule(
                   assignment.shift.startTime,
                   assignment.shift.endTime,
                 )}
               </p>
 
-              <p className="text-foreground/70">
+              <p className="text-secondary-foreground">
                 {formatShiftWorkDays(assignment.workDays)}
               </p>
 
               <div>
-                <p className="text-foreground/70">
+                <p className="text-secondary-foreground">
                   {formatShiftDateRange(
                     assignment.effectiveFrom,
                     assignment.effectiveTo,
                   )}
                 </p>
-                <p className="mt-0.5 text-xs text-foreground/50">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   {assignment.effectiveTo ? "Fixed period" : "Open-ended"}
                 </p>
               </div>

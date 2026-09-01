@@ -1,3 +1,5 @@
+import { Input } from "@/components/ui/form-controls";
+
 interface FormFieldProps {
   label: string;
   name: string;
@@ -9,16 +11,11 @@ export const FormField = ({
   label,
   name,
   defaultValue,
-  type = 'text',
+  type = "text",
 }: FormFieldProps) => (
-  <label className="space-y-1">
-    <span className="text-sm font-medium">{label}</span>
+  <label className="grid gap-1.5">
+    <span className="control-label">{label}</span>
 
-    <input
-      name={name}
-      type={type}
-      defaultValue={defaultValue ?? ''}
-      className="w-full rounded-md border px-3 py-2"
-    />
+    <Input name={name} type={type} defaultValue={defaultValue ?? ""} />
   </label>
 );

@@ -132,7 +132,7 @@ export function DepartmentForm({
               ? `${mode}-department-description-error`
               : undefined
           }
-          className="resize-y rounded-md border border-foreground/25 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          className="resize-y rounded-md border border-border-strong bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
         />
         <FieldError
           id={`${mode}-department-description-error`}
@@ -153,7 +153,7 @@ export function DepartmentForm({
               ? `${mode}-department-head-error`
               : `${mode}-department-head-help`
           }
-          className="min-w-0 rounded-md border border-foreground/25 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          className="min-w-0 rounded-md border border-border-strong bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
         >
           <option value="">Not assigned</option>
           {departmentHeadOptions.map((employee) => (
@@ -164,7 +164,7 @@ export function DepartmentForm({
         </select>
         <p
           id={`${mode}-department-head-help`}
-          className="text-xs leading-5 text-foreground/55"
+          className="text-xs leading-5 text-muted-foreground"
         >
           Only active employees who are not heading another department are
           available.
@@ -176,24 +176,24 @@ export function DepartmentForm({
       </label>
 
       {feedback ? (
-        <p role="alert" className="text-sm text-red-700 dark:text-red-400">
+        <p role="alert" className="text-sm text-destructive">
           {feedback}
         </p>
       ) : null}
 
-      <div className="flex flex-col-reverse gap-2 border-t border-foreground/15 pt-5 sm:flex-row sm:justify-end">
+      <div className="flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={onCancel}
           disabled={isSubmitting}
-          className="rounded-md border border-foreground/25 px-4 py-2 text-sm font-medium hover:bg-foreground/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-md border border-border-strong px-4 py-2 text-sm font-medium hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-[38px] rounded-control border border-primary bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting
             ? mode === "create"
@@ -243,7 +243,7 @@ function FormField({
         data-sheet-initial-focus={autoFocus ? "" : undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
-        className="rounded-md border border-foreground/25 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-md border border-border-strong bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
       />
       <FieldError id={`${id}-error`} message={error} />
     </label>
@@ -252,7 +252,7 @@ function FormField({
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   return message ? (
-    <p id={id} className="text-sm text-red-700 dark:text-red-400">
+    <p id={id} className="text-sm text-destructive">
       {message}
     </p>
   ) : null;

@@ -15,9 +15,7 @@ type Feedback = {
   message: string;
 };
 
-const normalizeFieldErrors = (
-  errors: Record<string, string[] | undefined>,
-) =>
+const normalizeFieldErrors = (errors: Record<string, string[] | undefined>) =>
   Object.entries(errors).reduce<Record<string, string[]>>(
     (normalized, [field, messages]) => {
       if (messages) {
@@ -31,7 +29,7 @@ const normalizeFieldErrors = (
 
 const FieldError = ({ messages }: { messages?: string[] }) =>
   messages?.[0] ? (
-    <p className="text-sm text-red-700">{messages[0]}</p>
+    <p className="text-sm text-destructive">{messages[0]}</p>
   ) : null;
 
 export const CreateLeaveForm = () => {
@@ -64,9 +62,7 @@ export const CreateLeaveForm = () => {
         type: "error",
         message: "Please correct the highlighted fields.",
       });
-      setFieldErrors(
-        normalizeFieldErrors(result.error.flatten().fieldErrors),
-      );
+      setFieldErrors(normalizeFieldErrors(result.error.flatten().fieldErrors));
       return;
     }
 
@@ -95,10 +91,10 @@ export const CreateLeaveForm = () => {
   };
 
   return (
-    <section className="rounded-lg border p-6 shadow-sm">
+    <section className="rounded-card border border-border bg-surface p-4 shadow-card">
       <div>
         <h2 className="text-lg font-semibold">Submit a Leave Request</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-muted-foreground">
           Provide the leave dates and a brief reason for your request.
         </p>
       </div>
@@ -168,7 +164,7 @@ export const CreateLeaveForm = () => {
             <p
               role={feedback.type === "error" ? "alert" : "status"}
               className={`text-sm ${
-                feedback.type === "error" ? "text-red-700" : "text-green-700"
+                feedback.type === "error" ? "text-destructive" : "text-success"
               }`}
             >
               {feedback.message}
@@ -180,7 +176,7 @@ export const CreateLeaveForm = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-[38px] rounded-control border border-primary bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "Submitting..." : "Submit Request"}
           </button>

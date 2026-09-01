@@ -8,7 +8,7 @@ export function UserFieldError({ messages }: UserFieldErrorProps) {
   }
 
   return (
-    <p role="alert" className="text-xs text-red-700 dark:text-red-400">
+    <p role="alert" className="text-xs text-destructive">
       {messages.join(" ")}
     </p>
   );

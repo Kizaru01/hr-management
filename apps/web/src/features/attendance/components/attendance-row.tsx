@@ -4,6 +4,7 @@ import {
   attendanceRecordStatusLabels,
   formatAttendanceTime,
 } from "../utils/attendance-formatters";
+import { Badge, type BadgeVariant } from "@/components/ui/badge";
 
 interface AttendanceRowProps {
   record: DailyAttendanceRecord;
@@ -64,35 +65,40 @@ export const AttendanceRow = ({ record }: AttendanceRowProps) => {
     .join(" ");
   const statusDetail = getStatusDetail(record);
   const attendanceDetails = getAttendanceDetails(record);
+  const statusVariant: BadgeVariant =
+    record.status === "on_time" || record.status === "in_progress"
+      ? "success"
+      : record.status === "late" ||
+          record.status === "undertime" ||
+          record.status === "late_and_undertime" ||
+          record.status === "scheduled"
+        ? "warning"
+        : record.status === "absent"
+          ? "destructive"
+          : record.status === "on_leave" || record.status === "holiday"
+            ? "info"
+            : "neutral";
 
   return (
-    <tr className="border-b last:border-0">
-      <td className="px-4 py-4">
+    <tr>
+      <td>
         <p className="font-medium">{employeeName}</p>
         <p className="text-xs text-muted-foreground">
           {record.employee.employeeNumber}
         </p>
       </td>
 
-      <td className="px-4 py-4">
-        <p className="font-medium">{statusLabels[record.status]}</p>
+      <td>
+        <Badge variant={statusVariant}>{statusLabels[record.status]}</Badge>
         {statusDetail ? (
           <p className="text-xs text-muted-foreground">{statusDetail}</p>
         ) : null}
       </td>
 
-      <td className="whitespace-nowrap px-4 py-4">
-        {attendanceDetails.checkIn}
-      </td>
-      <td className="whitespace-nowrap px-4 py-4">
-        {attendanceDetails.checkOut}
-      </td>
-      <td className="whitespace-nowrap px-4 py-4">
-        {attendanceDetails.late}
-      </td>
-      <td className="whitespace-nowrap px-4 py-4">
-        {attendanceDetails.undertime}
-      </td>
+      <td className="whitespace-nowrap">{attendanceDetails.checkIn}</td>
+      <td className="whitespace-nowrap">{attendanceDetails.checkOut}</td>
+      <td className="whitespace-nowrap">{attendanceDetails.late}</td>
+      <td className="whitespace-nowrap">{attendanceDetails.undertime}</td>
     </tr>
   );
 };

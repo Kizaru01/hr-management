@@ -35,7 +35,9 @@ const normalizeFieldErrors = (errors: Record<string, string[] | undefined>) =>
   );
 
 const FieldError = ({ messages }: { messages?: string[] }) =>
-  messages?.[0] ? <p className="text-sm text-red-700">{messages[0]}</p> : null;
+  messages?.[0] ? (
+    <p className="text-sm text-destructive">{messages[0]}</p>
+  ) : null;
 
 export const UploadEmployeeDocumentForm = ({
   employeeId,
@@ -115,10 +117,10 @@ export const UploadEmployeeDocumentForm = ({
   };
 
   return (
-    <section className="rounded-lg border p-6 shadow-sm">
+    <section className="rounded-card border border-border bg-surface p-4 shadow-card">
       <div>
         <h2 className="text-lg font-semibold">Upload Document</h2>
-        <p className="mt-1 text-sm text-gray-600">
+        <p className="mt-1 text-sm text-muted-foreground">
           Add a PDF, JPEG, or PNG file up to 10 MB.
         </p>
       </div>
@@ -199,7 +201,7 @@ export const UploadEmployeeDocumentForm = ({
             <p
               role={feedback.type === "error" ? "alert" : "status"}
               className={`text-sm ${
-                feedback.type === "error" ? "text-red-700" : "text-green-700"
+                feedback.type === "error" ? "text-destructive" : "text-success"
               }`}
             >
               {feedback.message}
@@ -211,7 +213,7 @@ export const UploadEmployeeDocumentForm = ({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-[38px] rounded-control border border-primary bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting ? "Uploading..." : "Upload Document"}
           </button>

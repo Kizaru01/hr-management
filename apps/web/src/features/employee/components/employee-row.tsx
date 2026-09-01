@@ -1,39 +1,46 @@
-import Link from 'next/link';
-import type { EmployeeListItem } from '../types/employee';
+import Link from "next/link";
+import type { EmployeeListItem } from "../types/employee";
+import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { buttonStyles } from "@/components/ui/button";
 
 interface EmployeeRowProps {
   employee: EmployeeListItem;
 }
 
-export const EmployeeRow = ({
-  employee,
-}: EmployeeRowProps) => {
-  const name = [
-    employee.firstName,
-    employee.middleName,
-    employee.lastName,
-  ]
+export const EmployeeRow = ({ employee }: EmployeeRowProps) => {
+  const name = [employee.firstName, employee.middleName, employee.lastName]
     .filter(Boolean)
-    .join(' ');
+    .join(" ");
+  const statusVariant: BadgeVariant =
+    employee.employmentStatus === "active"
+      ? "success"
+      : employee.employmentStatus === "terminated"
+        ? "destructive"
+        : "neutral";
 
   return (
-    <tr className="border-b last:border-0">
-      <td className="px-4 py-4">
+    <tr>
+      <td>
         <p className="font-medium">{name}</p>
         <p className="text-xs text-muted-foreground">
           {employee.employeeNumber}
         </p>
       </td>
 
-      <td className="px-4 py-4">{employee.department.name}</td>
-      <td className="px-4 py-4">{employee.position.name}</td>
-      <td className="px-4 py-4">{employee.branch?.name ?? '—'}</td>
-      <td className="px-4 py-4 capitalize">
-        {employee.employmentStatus}
+      <td>{employee.department.name}</td>
+      <td>{employee.position.name}</td>
+      <td>{employee.branch?.name ?? "—"}</td>
+      <td>
+        <Badge variant={statusVariant} className="capitalize">
+          {employee.employmentStatus}
+        </Badge>
       </td>
 
-      <td className="px-4 py-4">
-        <Link href={`/employees/${employee.id}`}>
+      <td>
+        <Link
+          href={`/employees/${employee.id}`}
+          className={buttonStyles({ variant: "ghost", size: "small" })}
+        >
           View
         </Link>
       </td>

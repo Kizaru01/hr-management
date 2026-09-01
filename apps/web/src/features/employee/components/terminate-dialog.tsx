@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { terminateEmployee } from "../api/terminate-employee";
+import { Dialog } from "@/components/dialog";
+import { Button } from "@/components/ui/button";
+import { Input, Textarea } from "@/components/ui/form-controls";
 
 interface Props {
   employeeId: string;
@@ -27,52 +30,60 @@ export const TerminateEmployeeDialog = ({ employeeId }: Props) => {
     router.refresh();
   };
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="rounded-md border px-3 py-2 text-sm"
-      >
-        Terminate
-      </button>
-    );
-  }
-
   return (
-    <div className="space-y-3 rounded-md border p-4">
-      <input
-        type="date"
-        value={terminationDate}
-        onChange={(event) => setTerminationDate(event.target.value)}
-        className="w-full rounded-md border px-3 py-2"
-      />
+    <>
+      <Button type="button" variant="destructive" onClick={() => setOpen(true)}>
+        Terminate
+      </Button>
 
-      <textarea
-        value={reason}
-        onChange={(event) => setReason(event.target.value)}
-        placeholder="Termination reason"
-        className="w-full rounded-md border px-3 py-2"
-      />
-
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={handleTerminate}
-          disabled={!terminationDate || !reason.trim()}
-          className="rounded-md border px-3 py-2 text-sm"
+      {open ? (
+        <Dialog
+          id="terminate-employee-dialog"
+          title="Terminate employee"
+          description="This action changes employment status and should be used with care."
+          onRequestClose={() => setOpen(false)}
         >
-          Confirm termination
-        </button>
+          <div className="space-y-4">
+            <label className="grid gap-1.5">
+              <span className="control-label">Termination date</span>
+              <Input
+                type="date"
+                value={terminationDate}
+                onChange={(event) => setTerminationDate(event.target.value)}
+                data-dialog-initial-focus
+              />
+            </label>
 
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="rounded-md border px-3 py-2 text-sm"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
+            <label className="grid gap-1.5">
+              <span className="control-label">Reason</span>
+              <Textarea
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                placeholder="Termination reason"
+              />
+            </label>
+
+            <div className="flex justify-end gap-2 border-t border-border pt-4">
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleTerminate}
+                disabled={!terminationDate || !reason.trim()}
+              >
+                Confirm termination
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </Dialog>
+      ) : null}
+    </>
   );
 };

@@ -6,11 +6,13 @@ import { ApiError } from "@/lib/api/api.client";
 import { markAllNotificationsAsRead } from "../api/mark-all-notifications-as-read";
 import { markNotificationAsRead } from "../api/mark-notification-as-read";
 import type { Notification } from "../types/notification";
-import {
-  formatNotificationTimestamp,
-  notificationTypeLabels,
-} from "../utils/notification-formatters";
+import { formatNotificationTimestamp } from "../utils/notification-formatters";
 import { isRecentlyPublished } from "../utils/isRecently-published";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Feedback } from "@/components/ui/feedback";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface NotificationInboxProps {
   notifications: Notification[];
@@ -89,46 +91,37 @@ export const NotificationInbox = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Notifications</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            {unreadCount === 0
-              ? "No unread notifications"
-              : `${unreadCount} unread`}
-          </p>
-        </div>
-
-        {unreadCount > 0 ? (
-          <button
-            type="button"
-            onClick={handleMarkAllAsRead}
-            disabled={hasPendingMutation}
-            className="w-fit rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isMarkingAll ? "Marking all..." : "Mark all as read"}
-          </button>
-        ) : null}
-      </div>
+      <PageHeader
+        title="Notifications"
+        description={
+          unreadCount === 0
+            ? "No unread notifications"
+            : `${unreadCount} unread`
+        }
+        actions={
+          unreadCount > 0 ? (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleMarkAllAsRead}
+              disabled={hasPendingMutation}
+            >
+              {isMarkingAll ? "Marking all..." : "Mark all as read"}
+            </Button>
+          ) : null
+        }
+      />
 
       {feedback ? (
-        <p
-          role={feedback.type === "error" ? "alert" : "status"}
-          className={`rounded-md border px-4 py-3 text-sm ${
-            feedback.type === "error"
-              ? "border-red-200 bg-red-50 text-red-700"
-              : "border-green-200 bg-green-50 text-green-700"
-          }`}
-        >
-          {feedback.message}
-        </p>
+        <Feedback tone={feedback.type}>{feedback.message}</Feedback>
       ) : null}
 
-      <section className="overflow-hidden rounded-lg border shadow-sm">
+      <section className="table-shell">
         {notifications.length === 0 ? (
-          <p className="p-8 text-center text-sm text-gray-600">
-            No notifications yet.
-          </p>
+          <EmptyState
+            title="No notifications yet"
+            description="Updates that need your attention will appear here."
+          />
         ) : (
           <ul className="divide-y">
             {notifications.map((notification) => (
@@ -136,8 +129,8 @@ export const NotificationInbox = ({
                 key={notification.id}
                 className={`border-l-4 p-5 ${
                   notification.isRead
-                    ? "border-l-transparent bg-white"
-                    : "border-l-black bg-gray-50"
+                    ? "border-l-transparent bg-surface"
+                    : "border-l-info bg-selected"
                 }`}
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -151,34 +144,33 @@ export const NotificationInbox = ({
                         {notification.title}
                       </h2>
                       {isRecentlyPublished(notification.createdAt) && (
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">
-                          New
-                        </span>
+                        <Badge variant="info">New</Badge>
                       )}
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         {notification.isRead ? "Read" : "Unread"}
                       </span>
                     </div>
 
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-gray-700">
+                    <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-secondary-foreground">
                       {notification.message}
                     </p>
-                    <p className="mt-2 text-xs text-gray-500">
+                    <p className="mt-2 text-xs text-muted-foreground">
                       {formatNotificationTimestamp(notification.createdAt)}
                     </p>
                   </div>
 
                   {!notification.isRead ? (
-                    <button
+                    <Button
                       type="button"
+                      variant="secondary"
+                      size="small"
                       onClick={() => handleMarkAsRead(notification.id)}
                       disabled={hasPendingMutation}
-                      className="shrink-0 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {pendingNotificationId === notification.id
                         ? "Marking..."
                         : "Mark as read"}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
               </li>

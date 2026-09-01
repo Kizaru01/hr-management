@@ -5,6 +5,8 @@ import { PositionManagement } from "@/features/positions/components/position-man
 import { getDepartmentPositions } from "@/features/positions/server/get-department-positions";
 import { getDepartment } from "@/features/departments/server/get-department";
 import { RequestError } from "@/lib/errors/http-errors";
+import { Badge } from "@/components/ui/badge";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface DepartmentPositionsPageProps {
   params: Promise<{ departmentId: string }>;
@@ -20,31 +22,25 @@ export default async function DepartmentPositionsPage({
 
   return (
     <div className="space-y-7">
-      <header>
+      <header className="space-y-4">
         <Link
           href="/departments"
-          className="inline-flex items-center gap-2 rounded-sm text-sm font-medium text-foreground/65 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="inline-flex items-center gap-2 rounded-sm text-sm font-medium text-secondary-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <ArrowLeft aria-hidden="true" size={16} />
           Back to departments
         </Link>
 
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="font-mono text-xs font-medium text-foreground/55">
-              {department.code}
-            </p>
-            <h1 className="mt-1 text-2xl font-semibold">
-              {department.name} positions
-            </h1>
-            <p className="mt-1 max-w-2xl text-sm text-foreground/60">
-              Manage the roles available within this department.
-            </p>
-          </div>
-          <span className="inline-flex w-fit rounded-full border border-foreground/20 bg-foreground/5 px-2 py-0.5 text-xs font-medium">
-            Department {department.isActive ? "active" : "inactive"}
-          </span>
-        </div>
+        <PageHeader
+          title={`${department.name} positions`}
+          eyebrow={<span className="font-mono">{department.code}</span>}
+          description="Manage the roles available within this department."
+          actions={
+            <Badge variant={department.isActive ? "success" : "neutral"}>
+              Department {department.isActive ? "active" : "inactive"}
+            </Badge>
+          }
+        />
       </header>
 
       <PositionManagement

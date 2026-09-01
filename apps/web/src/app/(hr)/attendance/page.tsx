@@ -4,6 +4,7 @@ import { AttendanceTable } from "@/features/attendance/components/attendance-tab
 import { getAttendanceSummary } from "@/features/attendance/server/get-attendance-summary";
 import { getDailyAttendance } from "@/features/attendance/server/get-daily-attendance";
 import { normalizeAttendanceDate } from "@/features/attendance/utils/normalize-attendance-date";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function AttendancePage({
   searchParams,
@@ -15,17 +16,12 @@ export default async function AttendancePage({
   ]);
 
   return (
-    <section className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Attendance</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Review company attendance by work date.
-          </p>
-        </div>
-
-        <AttendanceDateFilter selectedDate={date} />
-      </div>
+    <section className="page-stack">
+      <PageHeader
+        title="Attendance"
+        description="Review company attendance by work date."
+        actions={<AttendanceDateFilter selectedDate={date} />}
+      />
 
       <AttendanceSummary attendance={summaryResponse.data} />
 

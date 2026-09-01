@@ -3,6 +3,9 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Sheet, useSheetController } from "@/components/sheet";
+import { Button } from "@/components/ui/button";
+import { Feedback as FeedbackMessage } from "@/components/ui/feedback";
+import { PageHeader } from "@/components/ui/page-header";
 import type { Department, DepartmentHeadOption } from "../types/department";
 import { DepartmentDetails } from "./department-details";
 import { DepartmentForm } from "./department-form";
@@ -45,38 +48,30 @@ export function DepartmentManagement({
   };
 
   return (
-    <section className="space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Departments</h1>
-          <p className="mt-1 max-w-2xl text-sm text-foreground/60">
-            Organize departments, assign department heads, and manage their
-            active lifecycle.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          aria-haspopup="dialog"
-          aria-controls="department-sheet"
-          onClick={(event) => {
-            setFeedback(null);
-            sheet.openSheet({ type: "create" }, event.currentTarget);
-          }}
-          className="inline-flex w-fit items-center gap-2 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-        >
-          <Plus aria-hidden="true" size={17} />
-          Create department
-        </button>
-      </header>
+    <section className="page-stack">
+      <PageHeader
+        title="Departments"
+        description="Organize departments, assign department heads, and manage their active lifecycle."
+        actions={
+          <Button
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="department-sheet"
+            onClick={(event) => {
+              setFeedback(null);
+              sheet.openSheet({ type: "create" }, event.currentTarget);
+            }}
+          >
+            <Plus aria-hidden="true" size={17} />
+            Create department
+          </Button>
+        }
+      />
 
       {feedback ? (
-        <p
-          role={feedback.type === "error" ? "alert" : "status"}
-          className="rounded-md border border-foreground/20 px-4 py-3 text-sm text-foreground/70"
-        >
+        <FeedbackMessage tone={feedback.type}>
           {feedback.message}
-        </p>
+        </FeedbackMessage>
       ) : null}
 
       <DepartmentList

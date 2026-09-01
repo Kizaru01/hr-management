@@ -1,6 +1,8 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import type { Department } from "../types/department";
 import { formatEmployeeName } from "../utils/department-formatters";
 
@@ -20,23 +22,18 @@ export function DepartmentList({
 }: DepartmentListProps) {
   if (departments.length === 0) {
     return (
-      <div className="rounded-xl border border-foreground/25 px-6 py-12 text-center">
-        <p className="font-medium">No departments found.</p>
-        <p className="mt-1 text-sm text-foreground/60">
-          Create a department to begin organizing employee records.
-        </p>
-      </div>
+      <EmptyState
+        title="No departments found"
+        description="Create a department to begin organizing employee records."
+      />
     );
   }
 
   return (
     <>
-      <section
-        aria-label="Departments"
-        className="hidden overflow-hidden rounded-xl border border-foreground/25 md:block"
-      >
+      <section aria-label="Departments" className="table-shell hidden md:block">
         <div
-          className={`grid gap-4 border-b border-foreground/20 bg-foreground/5 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-foreground/55 ${desktopColumns}`}
+          className={`grid gap-4 border-b border-border bg-hover px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground ${desktopColumns}`}
         >
           <span>Code</span>
           <span>Department</span>
@@ -45,7 +42,7 @@ export function DepartmentList({
           <span className="sr-only">Open</span>
         </div>
 
-        <ul className="divide-y divide-foreground/15">
+        <ul className="divide-y divide-border">
           {departments.map((department) => {
             const isSelected = selectedDepartmentId === department.id;
 
@@ -58,8 +55,8 @@ export function DepartmentList({
                   aria-expanded={isSelected}
                   onClick={(event) => onSelect(department, event.currentTarget)}
                   className={`group grid w-full min-w-0 gap-4 px-5 py-4 text-left transition md:items-center ${desktopColumns} ${
-                    isSelected ? "bg-foreground/10" : "hover:bg-foreground/5"
-                  } focus-visible:relative focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-foreground`}
+                    isSelected ? "bg-selected" : "hover:bg-hover"
+                  } focus-visible:relative focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring`}
                 >
                   <span className="font-mono text-sm font-medium">
                     {department.code}
@@ -71,7 +68,7 @@ export function DepartmentList({
                   <StatusBadge isActive={department.isActive} />
                   <ChevronRight
                     aria-hidden="true"
-                    className="size-4 text-foreground/45 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground/75"
+                    className="size-4 text-disabled-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-secondary-foreground"
                   />
                 </button>
               </li>
@@ -92,13 +89,13 @@ export function DepartmentList({
                 aria-controls="department-sheet"
                 aria-expanded={isSelected}
                 onClick={(event) => onSelect(department, event.currentTarget)}
-                className={`group w-full rounded-xl border border-foreground/25 p-4 text-left transition ${
-                  isSelected ? "bg-foreground/10" : "hover:bg-foreground/5"
-                } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
+                className={`group w-full rounded-card border border-border-strong bg-surface p-4 text-left shadow-card transition ${
+                  isSelected ? "bg-selected" : "hover:bg-hover"
+                } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
               >
                 <span className="flex items-start justify-between gap-3">
                   <span className="min-w-0">
-                    <span className="block font-mono text-xs font-medium text-foreground/55">
+                    <span className="block font-mono text-xs font-medium text-muted-foreground">
                       {department.code}
                     </span>
                     <span className="mt-1 block truncate font-medium">
@@ -107,13 +104,13 @@ export function DepartmentList({
                   </span>
                   <ChevronRight
                     aria-hidden="true"
-                    className="mt-1 size-5 shrink-0 text-foreground/45 transition-transform group-hover:translate-x-0.5"
+                    className="mt-1 size-5 shrink-0 text-disabled-foreground transition-transform group-hover:translate-x-0.5"
                   />
                 </span>
 
-                <span className="mt-4 grid gap-3 border-t border-foreground/15 pt-3">
+                <span className="mt-4 grid gap-3 border-t border-border pt-3">
                   <span>
-                    <span className="block text-xs text-foreground/50">
+                    <span className="block text-xs text-muted-foreground">
                       Department head
                     </span>
                     <span className="mt-1 block">
@@ -121,7 +118,7 @@ export function DepartmentList({
                     </span>
                   </span>
                   <span>
-                    <span className="block text-xs text-foreground/50">
+                    <span className="block text-xs text-muted-foreground">
                       Status
                     </span>
                     <span className="mt-1 block">
@@ -140,7 +137,7 @@ export function DepartmentList({
 
 function HeadSummary({ department }: { department: Department }) {
   if (!department.departmentHead) {
-    return <span className="text-sm text-foreground/55">Not assigned</span>;
+    return <span className="text-sm text-muted-foreground">Not assigned</span>;
   }
 
   return (
@@ -148,7 +145,7 @@ function HeadSummary({ department }: { department: Department }) {
       <span className="block truncate font-medium">
         {formatEmployeeName(department.departmentHead)}
       </span>
-      <span className="mt-0.5 block font-mono text-xs text-foreground/55">
+      <span className="mt-0.5 block font-mono text-xs text-muted-foreground">
         {department.departmentHead.employeeNumber}
       </span>
     </span>
@@ -157,8 +154,8 @@ function HeadSummary({ department }: { department: Department }) {
 
 function StatusBadge({ isActive }: { isActive: boolean }) {
   return (
-    <span className="inline-flex w-fit rounded-full border border-foreground/20 bg-foreground/5 px-2 py-0.5 text-xs font-medium">
+    <Badge variant={isActive ? "success" : "neutral"}>
       {isActive ? "Active" : "Inactive"}
-    </span>
+    </Badge>
   );
 }

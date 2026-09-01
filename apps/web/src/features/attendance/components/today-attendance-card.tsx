@@ -115,7 +115,8 @@ export const TodayAttendanceCard = ({
     setFeedback(null);
 
     try {
-      const response = action === "check-in" ? await checkIn() : await checkOut();
+      const response =
+        action === "check-in" ? await checkIn() : await checkOut();
 
       setFeedback({ type: "success", message: response.message });
       router.refresh();
@@ -133,7 +134,7 @@ export const TodayAttendanceCard = ({
   };
 
   return (
-    <section className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm">
+    <section className="rounded-card border border-border bg-card p-4 text-card-foreground shadow-card">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-medium text-muted-foreground">
@@ -182,7 +183,7 @@ export const TodayAttendanceCard = ({
         <p
           role={feedback.type === "error" ? "alert" : "status"}
           className={`mt-4 text-sm ${
-            feedback.type === "error" ? "text-destructive" : "text-green-700"
+            feedback.type === "error" ? "text-destructive" : "text-success"
           }`}
         >
           {feedback.message}

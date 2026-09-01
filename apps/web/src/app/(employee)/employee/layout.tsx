@@ -1,6 +1,8 @@
-import Link from 'next/link';
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/features/auth/server/get-current-user';
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/features/auth/server/get-current-user";
+import { getUnreadNotificationCount } from "@/features/notification/server/get-unread-count";
+import { EmployeeHeader } from "@/features/layout/components/employee-header";
+import { EmployeeSidebar } from "@/features/layout/components/employee-sidebar";
 
 interface EmployeeLayoutProps {
   children: React.ReactNode;
@@ -11,35 +13,28 @@ export default async function EmployeeLayout({
 }: EmployeeLayoutProps) {
   const user = await getCurrentUser();
 
-if (!user) {
-  redirect('/login');
-}
+  if (!user) {
+    redirect("/login");
+  }
 
-if (user.role !== 'employee') {
-  redirect('/dashboard');
-}
+  if (user.role !== "employee") {
+    redirect("/dashboard");
+  }
+
+  const notificationResponse = await getUnreadNotificationCount();
 
   return (
-    <>
-      <nav
-        aria-label="Employee navigation"
-        className="flex justify-end gap-2 border-b bg-background px-4 py-3 sm:px-6 lg:px-8"
-      >
-        <Link
-          href="/employee/performance-reviews"
-          className="rounded-md border px-3 py-2 text-sm"
-        >
-          Performance Reviews
-        </Link>
-        <Link
-          href="/employee/notifications"
-          className="rounded-md border px-3 py-2 text-sm"
-        >
-          Notifications
-        </Link>
-      </nav>
-
-      {children}
-    </>
+    <div className="min-h-screen bg-background">
+      <EmployeeSidebar user={user} />
+      <div className="lg:pl-60">
+        <EmployeeHeader
+          user={user}
+          unreadCount={notificationResponse.data.count}
+        />
+        <main className="mx-auto w-full max-w-[1920px] px-4 py-6 sm:px-6 sm:py-7">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }

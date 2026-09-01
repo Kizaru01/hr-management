@@ -4,5 +4,5 @@ interface FieldErrorProps {
 
 export const FieldError = ({ messages }: FieldErrorProps) =>
   messages?.[0] ? (
-    <p className="text-xs text-red-700">{messages[0]}</p>
+    <p className="text-xs text-destructive">{messages[0]}</p>
   ) : null;

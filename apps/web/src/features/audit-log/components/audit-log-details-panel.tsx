@@ -77,7 +77,7 @@ export const AuditLogDetailsPanel = ({
 
                 <time
                   dateTime={auditLog.createdAt}
-                  className="mt-1 flex items-center gap-1.5 text-sm text-foreground/60"
+                  className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground"
                 >
                   <Clock3 aria-hidden="true" size={15} />
                   {formatAuditLogTimestamp(auditLog.createdAt)}
@@ -88,16 +88,16 @@ export const AuditLogDetailsPanel = ({
 
           <section
             aria-labelledby="actor-heading"
-            className="mt-7 border-t border-foreground/15 pt-5"
+            className="mt-7 border-t border-border pt-5"
           >
             <h3
               id="actor-heading"
-              className="text-xs font-semibold uppercase tracking-wide text-foreground/50"
+              className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
             >
               Actor
             </h3>
             <div className="mt-3 flex min-w-0 items-start gap-3">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-foreground/20 bg-foreground/5 text-foreground/70">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-hover text-secondary-foreground">
                 {auditLog.actorUser ? (
                   <UserRound aria-hidden="true" size={17} />
                 ) : (
@@ -108,7 +108,7 @@ export const AuditLogDetailsPanel = ({
                 <p className="break-words font-medium [overflow-wrap:anywhere]">
                   {auditLog.actorUser?.email ?? "System"}
                 </p>
-                <p className="mt-0.5 text-sm text-foreground/60">
+                <p className="mt-0.5 text-sm text-muted-foreground">
                   {auditLog.actorUser
                     ? formatAuditLogRole(auditLog.actorUser.role)
                     : "No user actor"}
@@ -119,11 +119,11 @@ export const AuditLogDetailsPanel = ({
 
           <section
             aria-labelledby="target-heading"
-            className="mt-7 border-t border-foreground/15 pt-5"
+            className="mt-7 border-t border-border pt-5"
           >
             <h3
               id="target-heading"
-              className="text-xs font-semibold uppercase tracking-wide text-foreground/50"
+              className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
             >
               Target
             </h3>
@@ -131,7 +131,7 @@ export const AuditLogDetailsPanel = ({
               {target.label}
             </p>
             {target.context ? (
-              <p className="mt-0.5 text-sm text-foreground/60">
+              <p className="mt-0.5 text-sm text-muted-foreground">
                 {target.context}
               </p>
             ) : null}
@@ -140,11 +140,11 @@ export const AuditLogDetailsPanel = ({
           {metadataDetails.length > 0 ? (
             <section
               aria-labelledby="metadata-heading"
-              className="mt-7 border-t border-foreground/15 pt-5"
+              className="mt-7 border-t border-border pt-5"
             >
               <h3
                 id="metadata-heading"
-                className="text-xs font-semibold uppercase tracking-wide text-foreground/50"
+                className="text-xs font-semibold uppercase tracking-wide text-muted-foreground"
               >
                 Activity details
               </h3>
@@ -154,7 +154,7 @@ export const AuditLogDetailsPanel = ({
                     key={`${detail.label}-${detail.value}`}
                     className="min-w-0"
                   >
-                    <dt className="text-xs text-foreground/55">
+                    <dt className="text-xs text-muted-foreground">
                       {detail.label}
                     </dt>
                     <dd className="mt-1 break-words text-sm leading-5 [overflow-wrap:anywhere]">
@@ -166,8 +166,8 @@ export const AuditLogDetailsPanel = ({
             </section>
           ) : null}
 
-          <details className="mt-7 border-t border-foreground/15 pt-5 text-sm">
-            <summary className="w-fit cursor-pointer rounded-sm font-medium text-foreground/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+          <details className="mt-7 border-t border-border pt-5 text-sm">
+            <summary className="w-fit cursor-pointer rounded-sm font-medium text-secondary-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
               Technical details
             </summary>
             <dl className="mt-4 grid gap-4">
@@ -189,10 +189,16 @@ export const AuditLogDetailsPanel = ({
   );
 };
 
-const TechnicalDetail = ({ label, value }: { label: string; value: string }) => (
+const TechnicalDetail = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) => (
   <div className="min-w-0">
-    <dt className="text-xs text-foreground/50">{label}</dt>
-    <dd className="mt-1 break-all font-mono text-xs leading-5 text-foreground/75">
+    <dt className="text-xs text-muted-foreground">{label}</dt>
+    <dd className="mt-1 break-all font-mono text-xs leading-5 text-secondary-foreground">
       {value}
     </dd>
   </div>

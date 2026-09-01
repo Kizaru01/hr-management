@@ -1,0 +1,18 @@
+import type { HTMLAttributes, TableHTMLAttributes } from "react";
+import { cn } from "@/lib/cn";
+
+export function TableShell({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn("table-shell overflow-x-auto", className)} {...props} />
+  );
+}
+
+export function Table({
+  className,
+  ...props
+}: TableHTMLAttributes<HTMLTableElement>) {
+  return <table className={cn("data-table", className)} {...props} />;
+}
