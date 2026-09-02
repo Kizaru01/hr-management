@@ -469,8 +469,16 @@ export class EmployeeService {
       throw new NotFoundException('Department not found.');
     }
 
+    if (!department.isActive) {
+      throw new BadRequestException('Department must be active.');
+    }
+
     if (!position) {
       throw new NotFoundException('Position not found.');
+    }
+
+    if (!position.isActive) {
+      throw new BadRequestException('Position must be active.');
     }
 
     if (position.departmentId !== departmentId) {

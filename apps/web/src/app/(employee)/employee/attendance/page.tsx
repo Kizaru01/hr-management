@@ -5,6 +5,7 @@ import { getMyAttendanceHistory } from "@/features/attendance/server/get-my-atte
 import { getMyAttendanceSummary } from "@/features/attendance/server/get-my-attendance-summary";
 import { getMyAttendanceStatus } from "@/features/attendance/server/get-my-attendance-status";
 import { normalizeAttendanceDate } from "@/features/attendance/utils/normalize-attendance-date";
+import { PageHeader } from "@/components/ui/page-header";
 
 export default async function EmployeeAttendancePage({
   searchParams,
@@ -27,13 +28,11 @@ export default async function EmployeeAttendancePage({
   ]);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-      <div>
-        <h1 className="text-2xl font-bold">Attendance</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          View today&apos;s attendance and record your check-in or check-out.
-        </p>
-      </div>
+    <div className="page-stack mx-auto w-full max-w-5xl">
+      <PageHeader
+        title="Attendance"
+        description="View today's attendance and record your check-in or check-out."
+      />
 
       <TodayAttendanceCard initialStatus={status.data} />
 

@@ -1,7 +1,4 @@
-import type {
-  AuditLogActorRole,
-  AuditLogJsonValue,
-} from "../types/audit-log";
+import type { AuditLogActorRole, AuditLogJsonValue } from "../types/audit-log";
 
 export interface AuditLogMetadataDetail {
   label: string;
@@ -36,6 +33,17 @@ const dateFormatter = new Intl.DateTimeFormat("en-PH", {
 
 const actionLabels: Record<string, string> = {
   "announcement.create": "Announcement created",
+  "department.create": "Department created",
+  "department.update": "Department updated",
+  "department.head.assign": "Department head assigned",
+  "department.head.replace": "Department head replaced",
+  "department.head.remove": "Department head removed",
+  "department.deactivate": "Department deactivated",
+  "department.reactivate": "Department reactivated",
+  "position.create": "Position created",
+  "position.update": "Position updated",
+  "position.deactivate": "Position deactivated",
+  "position.reactivate": "Position reactivated",
   "employee.update": "Employee updated",
   "employee.terminate": "Employee terminated",
   "employee_document.create": "Employee document created",
@@ -47,6 +55,17 @@ const actionLabels: Record<string, string> = {
 
 const actionStatusLabels: Record<string, string> = {
   "announcement.create": "Created",
+  "department.create": "Created",
+  "department.update": "Updated",
+  "department.head.assign": "Assigned",
+  "department.head.replace": "Reassigned",
+  "department.head.remove": "Removed",
+  "department.deactivate": "Deactivated",
+  "department.reactivate": "Reactivated",
+  "position.create": "Created",
+  "position.update": "Updated",
+  "position.deactivate": "Deactivated",
+  "position.reactivate": "Reactivated",
   "employee.update": "Updated",
   "employee.terminate": "Terminated",
   "employee_document.create": "Uploaded",
@@ -58,9 +77,11 @@ const actionStatusLabels: Record<string, string> = {
 
 const entityTypeLabels: Record<string, string> = {
   Announcement: "Announcement",
+  Department: "Department",
   Employee: "Employee",
   EmployeeDocument: "Employee document",
   LeaveRequest: "Leave request",
+  Position: "Position",
 };
 
 const roleLabels: Record<AuditLogActorRole, string> = {
@@ -72,10 +93,14 @@ const roleLabels: Record<AuditLogActorRole, string> = {
 const metadataLabels: Record<string, string> = {
   audience: "Audience",
   branchId: "Branch ID",
+  code: "Code",
+  departmentHeadEmployeeId: "Department head employee ID",
   departmentId: "Department ID",
+  departmentName: "Department",
   employeeId: "Employee ID",
   newStatus: "New status",
   previousStatus: "Previous status",
+  previousHeadEmployeeId: "Previous head employee ID",
   reason: "Reason",
   terminationDate: "Termination date",
   title: "Title",
@@ -85,8 +110,10 @@ const metadataLabels: Record<string, string> = {
 
 const identifierMetadataKeys = new Set([
   "branchId",
+  "departmentHeadEmployeeId",
   "departmentId",
   "employeeId",
+  "previousHeadEmployeeId",
 ]);
 
 const humanizedMetadataKeys = new Set([
@@ -130,8 +157,7 @@ export const formatAuditLogStatus = (action: string) =>
 export const formatAuditLogEntityType = (entityType: string) =>
   entityTypeLabels[entityType] ?? humanizeIdentifier(entityType);
 
-export const formatAuditLogRole = (role: AuditLogActorRole) =>
-  roleLabels[role];
+export const formatAuditLogRole = (role: AuditLogActorRole) => roleLabels[role];
 
 export function formatAuditLogTarget(
   entityType: string,
@@ -140,11 +166,17 @@ export function formatAuditLogTarget(
   const entityLabel = formatAuditLogEntityType(entityType);
 
   if (
-    (entityType === "Announcement" || entityType === "EmployeeDocument") &&
+    (entityType === "Announcement" ||
+      entityType === "Department" ||
+      entityType === "EmployeeDocument" ||
+      entityType === "Position") &&
     isJsonObject(metadata)
   ) {
-    const title =
-      metadata.title === undefined ? null : formatScalar(metadata.title);
+    const titleValue =
+      entityType === "Department" || entityType === "Position"
+        ? metadata.name
+        : metadata.title;
+    const title = titleValue === undefined ? null : formatScalar(titleValue);
 
     if (title && title !== "Redacted") {
       return {

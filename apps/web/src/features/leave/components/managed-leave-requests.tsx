@@ -4,10 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError } from "@/lib/api/api.client";
 import { approveLeave } from "../api/approve-leave";
-import type {
-  LeaveStatus,
-  ManagedLeaveRequest,
-} from "../types/leave";
+import type { LeaveStatus, ManagedLeaveRequest } from "../types/leave";
 import {
   formatLeaveDateRange,
   formatLeaveEmployeeName,
@@ -23,10 +20,10 @@ interface ManagedLeaveRequestsProps {
 }
 
 const statusStyles: Record<LeaveStatus, string> = {
-  pending: "bg-amber-100 text-amber-800",
-  approved: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
-  cancelled: "bg-gray-100 text-gray-700",
+  pending: "border-warning-border bg-warning-surface text-warning",
+  approved: "border-success-border bg-success-surface text-success",
+  rejected: "border-destructive-border bg-destructive-surface text-destructive",
+  cancelled: "border-border-strong bg-hover text-secondary-foreground",
 };
 
 export const ManagedLeaveRequests = ({
@@ -75,12 +72,12 @@ export const ManagedLeaveRequests = ({
 
   return (
     <>
-      <section className="rounded-lg border shadow-sm">
+      <section className="table-shell">
         {feedback ? (
           <p
             role={feedback.type === "error" ? "alert" : "status"}
             className={`border-b px-4 py-3 text-sm ${
-              feedback.type === "error" ? "text-red-700" : "text-green-700"
+              feedback.type === "error" ? "text-destructive" : "text-success"
             }`}
           >
             {feedback.message}
@@ -88,13 +85,13 @@ export const ManagedLeaveRequests = ({
         ) : null}
 
         {leaveRequests.length === 0 ? (
-          <p className="p-8 text-center text-sm text-gray-600">
+          <p className="p-8 text-center text-sm text-muted-foreground">
             {emptyMessage}
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y text-left text-sm">
-              <thead className="bg-gray-50">
+            <table className="data-table min-w-[1100px]">
+              <thead>
                 <tr>
                   <th className="px-4 py-3 font-medium">Employee</th>
                   <th className="px-4 py-3 font-medium">Leave Type</th>
@@ -113,7 +110,7 @@ export const ManagedLeaveRequests = ({
                       <p className="font-medium">
                         {formatLeaveEmployeeName(leaveRequest.employee)}
                       </p>
-                      <p className="text-xs text-gray-600">
+                      <p className="text-xs text-muted-foreground">
                         {leaveRequest.employee.employeeNumber}
                       </p>
                     </td>
@@ -128,7 +125,7 @@ export const ManagedLeaveRequests = ({
                     </td>
                     <td className="whitespace-nowrap px-4 py-4">
                       <span
-                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusStyles[leaveRequest.status]}`}
+                        className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${statusStyles[leaveRequest.status]}`}
                       >
                         {leaveStatusLabels[leaveRequest.status]}
                       </span>
@@ -149,7 +146,7 @@ export const ManagedLeaveRequests = ({
                             type="button"
                             onClick={() => handleApprove(leaveRequest.id)}
                             disabled={pendingApproveId !== null}
-                            className="rounded-md border border-green-300 px-3 py-1.5 font-medium text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="rounded-control border border-success px-3 py-1.5 font-medium text-success hover:bg-success-surface disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {pendingApproveId === leaveRequest.id
                               ? "Approving..."
@@ -162,13 +159,13 @@ export const ManagedLeaveRequests = ({
                               setRejectingLeave(leaveRequest);
                             }}
                             disabled={pendingApproveId !== null}
-                            className="rounded-md border border-red-300 px-3 py-1.5 font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="rounded-control border border-destructive px-3 py-1.5 font-medium text-destructive hover:bg-destructive-surface disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             Reject
                           </button>
                         </div>
                       ) : (
-                        <span className="text-gray-500">—</span>
+                        <span className="text-disabled-foreground">—</span>
                       )}
                     </td>
                   </tr>

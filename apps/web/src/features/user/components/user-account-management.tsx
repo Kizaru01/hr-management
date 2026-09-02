@@ -1,6 +1,9 @@
 "use client";
 
 import { useSheetController, Sheet } from "@/components/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import type { ManagedUser } from "../types/user";
 import { CreateUserForm } from "./create-user-form";
 import { UserDetails } from "./user-details";
@@ -11,9 +14,7 @@ interface UserAccountManagementProps {
   currentUserId: string;
 }
 
-type SheetContent =
-  | { type: "create" }
-  | { type: "details"; user: ManagedUser };
+type SheetContent = { type: "create" } | { type: "details"; user: ManagedUser };
 
 export function UserAccountManagement({
   users,
@@ -27,35 +28,28 @@ export function UserAccountManagement({
     sheet.content?.type === "details" ? sheet.content.user.id : undefined;
 
   return (
-    <section className="space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            User &amp; Account Management
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-foreground/60">
-            Create sign-in accounts, manage roles, and control access without
-            changing employee employment records.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 sm:justify-end">
-          <p className="w-fit shrink-0 rounded-full border border-foreground/20 bg-foreground/5 px-3 py-1.5 text-sm font-medium text-foreground/70">
-            {activeCount} active of {users.length}
-          </p>
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            aria-controls="user-account-sheet"
-            onClick={(event) =>
-              sheet.openSheet({ type: "create" }, event.currentTarget)
-            }
-            className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            Create account
-          </button>
-        </div>
-      </header>
+    <section className="page-stack">
+      <PageHeader
+        title="User & Account Management"
+        description="Create sign-in accounts, manage roles, and control access without changing employee employment records."
+        actions={
+          <>
+            <Badge className="px-3 py-1.5 text-sm">
+              {activeCount} active of {users.length}
+            </Badge>
+            <Button
+              type="button"
+              aria-haspopup="dialog"
+              aria-controls="user-account-sheet"
+              onClick={(event) =>
+                sheet.openSheet({ type: "create" }, event.currentTarget)
+              }
+            >
+              Create account
+            </Button>
+          </>
+        }
+      />
 
       <UserList
         users={users}

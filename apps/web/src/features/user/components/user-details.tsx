@@ -1,4 +1,5 @@
 import type { ManagedUser, UserRole } from "../types/user";
+import { Badge, type BadgeVariant } from "@/components/ui/badge";
 
 interface UserDetailsProps {
   user: ManagedUser;
@@ -24,11 +25,14 @@ const dateTimeFormatter = new Intl.DateTimeFormat("en-PH", {
 export function UserDetails({ user }: UserDetailsProps) {
   return (
     <div className="space-y-6">
-      <div className="border-b border-foreground/15 pb-5">
+      <div className="border-b border-border pb-5">
         <p className="break-words text-lg font-semibold">{user.email}</p>
-        <span className="mt-3 inline-flex rounded-full border border-foreground/20 bg-foreground/5 px-2.5 py-1 text-xs font-medium">
+        <Badge
+          variant={accountStatusVariant(user)}
+          className="mt-3 px-2.5 py-1"
+        >
           {accountStatusLabel(user)}
-        </span>
+        </Badge>
       </div>
 
       <dl className="grid gap-5 text-sm">
@@ -36,15 +40,15 @@ export function UserDetails({ user }: UserDetailsProps) {
 
         {user.linkedEmployee ? (
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-foreground/50">
+            <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Linked employee
             </dt>
             <dd className="mt-1.5 leading-6">
               <p className="font-medium">{user.linkedEmployee.name}</p>
-              <p className="text-foreground/65">
+              <p className="text-secondary-foreground">
                 {user.linkedEmployee.employeeNumber}
               </p>
-              <p className="capitalize text-foreground/55">
+              <p className="capitalize text-muted-foreground">
                 {user.linkedEmployee.employmentStatus}
               </p>
             </dd>
@@ -73,10 +77,10 @@ export function UserDetails({ user }: UserDetailsProps) {
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs font-semibold uppercase tracking-wide text-foreground/50">
+      <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </dt>
-      <dd className="mt-1.5 leading-6 text-foreground/80">{value}</dd>
+      <dd className="mt-1.5 leading-6 text-secondary-foreground">{value}</dd>
     </div>
   );
 }
@@ -99,6 +103,22 @@ function accountStatusLabel(user: ManagedUser) {
   }
 
   return user.status.charAt(0).toUpperCase() + user.status.slice(1);
+}
+
+function accountStatusVariant(user: ManagedUser): BadgeVariant {
+  if (user.status === "pending") {
+    return "warning";
+  }
+
+  if (user.status === "active" && user.isActive) {
+    return "success";
+  }
+
+  return user.status === "disabled"
+    ? "destructive"
+    : user.status === "suspended"
+      ? "warning"
+      : "neutral";
 }
 
 function formatTimestamp(value: string, formatter: Intl.DateTimeFormat) {

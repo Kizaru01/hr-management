@@ -1,10 +1,6 @@
 import { authenticatedApi } from "@/lib/api/authenticated-api";
 import type { ApiResponse } from "@/types/api";
-
-interface Department {
-  id: string;
-  name: string;
-}
+import type { Department } from "../types/department";
 
 export async function getDepartments() {
   return authenticatedApi<ApiResponse<Department[]>>("/departments");

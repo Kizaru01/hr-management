@@ -27,7 +27,9 @@ const audiences = Object.keys(
 ) as AnnouncementAudience[];
 
 const FieldError = ({ messages }: { messages?: string[] }) =>
-  messages?.[0] ? <p className="text-sm text-red-700">{messages[0]}</p> : null;
+  messages?.[0] ? (
+    <p className="text-sm text-destructive">{messages[0]}</p>
+  ) : null;
 
 const toIsoDateTime = (value: string) => {
   const date = new Date(value);
@@ -118,158 +120,155 @@ export const CreateAnnouncementForm = ({
 
   return (
     <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
-      <label
-        className="grid gap-1 sm:col-span-2"
-        htmlFor="announcement-title"
-      >
-          <span className="text-sm font-medium">Title</span>
-          <input
-            id="announcement-title"
-            name="title"
-            type="text"
-            data-sheet-initial-focus
-            required
-            maxLength={150}
-            disabled={isSubmitting}
-            className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
-          />
-          <FieldError messages={fieldErrors.title} />
+      <label className="grid gap-1 sm:col-span-2" htmlFor="announcement-title">
+        <span className="text-sm font-medium">Title</span>
+        <input
+          id="announcement-title"
+          name="title"
+          type="text"
+          data-sheet-initial-focus
+          required
+          maxLength={150}
+          disabled={isSubmitting}
+          className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+        />
+        <FieldError messages={fieldErrors.title} />
       </label>
 
       <label className="grid gap-1" htmlFor="announcement-audience">
-          <span className="text-sm font-medium">Audience</span>
-          <select
-            id="announcement-audience"
-            name="audience"
-            value={audience}
-            onChange={handleAudienceChange}
-            disabled={isSubmitting}
-            className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {audiences.map((value) => (
-              <option key={value} value={value}>
-                {announcementAudienceLabels[value]}
-              </option>
-            ))}
-          </select>
-          <FieldError messages={fieldErrors.audience} />
+        <span className="text-sm font-medium">Audience</span>
+        <select
+          id="announcement-audience"
+          name="audience"
+          value={audience}
+          onChange={handleAudienceChange}
+          disabled={isSubmitting}
+          className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {audiences.map((value) => (
+            <option key={value} value={value}>
+              {announcementAudienceLabels[value]}
+            </option>
+          ))}
+        </select>
+        <FieldError messages={fieldErrors.audience} />
       </label>
 
       <label className="grid gap-1" htmlFor="announcement-expires-at">
-          <span className="text-sm font-medium">Expires At (optional)</span>
-          <input
-            id="announcement-expires-at"
-            name="expiresAt"
-            type="datetime-local"
-            step={60}
-            disabled={isSubmitting}
-            className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
-          />
-          <FieldError messages={fieldErrors.expiresAt} />
+        <span className="text-sm font-medium">Expires At (optional)</span>
+        <input
+          id="announcement-expires-at"
+          name="expiresAt"
+          type="datetime-local"
+          step={60}
+          disabled={isSubmitting}
+          className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+        />
+        <FieldError messages={fieldErrors.expiresAt} />
       </label>
 
       {audience === "department" ? (
-          <label
-            className="grid gap-1 sm:col-span-2"
-            htmlFor="announcement-department"
+        <label
+          className="grid gap-1 sm:col-span-2"
+          htmlFor="announcement-department"
+        >
+          <span className="text-sm font-medium">Department</span>
+          <select
+            id="announcement-department"
+            name="departmentId"
+            value={departmentId}
+            onChange={(event) => setDepartmentId(event.target.value)}
+            required
+            disabled={isSubmitting}
+            className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <span className="text-sm font-medium">Department</span>
-            <select
-              id="announcement-department"
-              name="departmentId"
-              value={departmentId}
-              onChange={(event) => setDepartmentId(event.target.value)}
-              required
-              disabled={isSubmitting}
-              className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <option value="">Select a department</option>
-              {departments.map((department) => (
-                <option key={department.value} value={department.value}>
-                  {department.label}
-                </option>
-              ))}
-            </select>
-            <FieldError messages={fieldErrors.departmentId} />
-          </label>
+            <option value="">Select a department</option>
+            {departments.map((department) => (
+              <option key={department.value} value={department.value}>
+                {department.label}
+              </option>
+            ))}
+          </select>
+          <FieldError messages={fieldErrors.departmentId} />
+        </label>
       ) : null}
 
       {audience === "branch" ? (
-          <label
-            className="grid gap-1 sm:col-span-2"
-            htmlFor="announcement-branch"
+        <label
+          className="grid gap-1 sm:col-span-2"
+          htmlFor="announcement-branch"
+        >
+          <span className="text-sm font-medium">Branch</span>
+          <select
+            id="announcement-branch"
+            name="branchId"
+            value={branchId}
+            onChange={(event) => setBranchId(event.target.value)}
+            required
+            disabled={isSubmitting}
+            className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <span className="text-sm font-medium">Branch</span>
-            <select
-              id="announcement-branch"
-              name="branchId"
-              value={branchId}
-              onChange={(event) => setBranchId(event.target.value)}
-              required
-              disabled={isSubmitting}
-              className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <option value="">Select a branch</option>
-              {branches.map((branch) => (
-                <option key={branch.value} value={branch.value}>
-                  {branch.label}
-                </option>
-              ))}
-            </select>
-            <FieldError messages={fieldErrors.branchId} />
-          </label>
+            <option value="">Select a branch</option>
+            {branches.map((branch) => (
+              <option key={branch.value} value={branch.value}>
+                {branch.label}
+              </option>
+            ))}
+          </select>
+          <FieldError messages={fieldErrors.branchId} />
+        </label>
       ) : null}
 
       <label
         className="grid gap-1 sm:col-span-2"
         htmlFor="announcement-content"
       >
-          <span className="text-sm font-medium">Content</span>
-          <textarea
-            id="announcement-content"
-            name="content"
-            rows={6}
-            required
-            disabled={isSubmitting}
-            className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
-          />
-          <FieldError messages={fieldErrors.content} />
+        <span className="text-sm font-medium">Content</span>
+        <textarea
+          id="announcement-content"
+          name="content"
+          rows={6}
+          required
+          disabled={isSubmitting}
+          className="rounded-md border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+        />
+        <FieldError messages={fieldErrors.content} />
       </label>
 
-      <div className="flex flex-col-reverse gap-3 border-t border-foreground/15 pt-4 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
-          {feedback ? (
-            <p
-              role={feedback.type === "error" ? "alert" : "status"}
-              className={`text-sm ${
-                feedback.type === "error" ? "text-red-700" : "text-green-700"
-              }`}
-            >
-              {feedback.message}
-            </p>
-          ) : (
-            <span />
-          )}
+      <div className="flex flex-col-reverse gap-3 border-t border-border pt-4 sm:col-span-2 sm:flex-row sm:items-center sm:justify-between">
+        {feedback ? (
+          <p
+            role={feedback.type === "error" ? "alert" : "status"}
+            className={`text-sm ${
+              feedback.type === "error" ? "text-destructive" : "text-success"
+            }`}
+          >
+            {feedback.message}
+          </p>
+        ) : (
+          <span />
+        )}
 
-          <div className="flex gap-2">
-            {onCancel ? (
-              <button
-                type="button"
-                onClick={onCancel}
-                disabled={isSubmitting}
-                className="rounded-md border border-foreground/25 px-4 py-2 text-sm font-medium hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Cancel
-              </button>
-            ) : null}
-
+        <div className="flex gap-2">
+          {onCancel ? (
             <button
-              type="submit"
+              type="button"
+              onClick={onCancel}
               disabled={isSubmitting}
-              className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-md border border-border-strong px-4 py-2 text-sm font-medium hover:bg-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? "Publishing..." : "Publish announcement"}
+              Cancel
             </button>
-          </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="h-[38px] rounded-control border border-primary bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSubmitting ? "Publishing..." : "Publish announcement"}
+          </button>
+        </div>
       </div>
     </form>
   );

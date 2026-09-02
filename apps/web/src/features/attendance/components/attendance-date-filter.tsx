@@ -1,6 +1,8 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/form-controls";
 
 interface AttendanceDateFilterProps {
   selectedDate?: string;
@@ -31,23 +33,19 @@ export const AttendanceDateFilter = ({
   return (
     <div className="flex items-end gap-2">
       <label className="grid gap-1" htmlFor="attendance-date">
-        <span className="text-sm text-muted-foreground">Work date</span>
-        <input
+        <span className="control-label">Work date</span>
+        <Input
           id="attendance-date"
           type="date"
           value={selectedDate ?? ""}
           onChange={(event) => updateDate(event.target.value)}
-          className="rounded-lg border bg-background px-3 py-2 text-sm"
+          className="w-auto"
         />
       </label>
 
-      <button
-        type="button"
-        onClick={() => updateDate()}
-        className="rounded-lg border px-3 py-2 text-sm font-medium"
-      >
+      <Button type="button" variant="secondary" onClick={() => updateDate()}>
         Today
-      </button>
+      </Button>
     </div>
   );
 };

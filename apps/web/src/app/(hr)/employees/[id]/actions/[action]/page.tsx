@@ -10,6 +10,7 @@ import { getEmployee } from "@/features/employee/server/get-employee";
 import { CreatePerformanceReviewForm } from "@/features/performance-review/components/create-performance-review-form";
 import { AssignShiftForm } from "@/features/shift/components/assign-shift-form";
 import { getShifts } from "@/features/shift/server/get-shifts";
+import { PageHeader } from "@/components/ui/page-header";
 
 interface EmployeeActionPageProps {
   params: Promise<{
@@ -66,23 +67,19 @@ export default async function EmployeeActionPage({
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
-      <header className="space-y-4 border-b border-foreground/20 pb-5">
+      <header className="space-y-4 border-b border-border pb-5">
         <Link
           href={`/employees/${encodeURIComponent(id)}`}
-          className="inline-flex text-sm font-medium text-foreground/65 underline-offset-4 hover:text-foreground hover:underline"
+          className="inline-flex text-sm font-medium text-secondary-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
           ← Back to employee record
         </Link>
 
-        <div>
-          <h1 className="text-2xl font-semibold">{details.title}</h1>
-          <p className="mt-1 text-sm text-foreground/60">
-            {fullName} · {employee.employeeNumber}
-          </p>
-          <p className="mt-2 text-sm text-foreground/60">
-            {details.description}
-          </p>
-        </div>
+        <PageHeader
+          title={details.title}
+          eyebrow={`${fullName} · ${employee.employeeNumber}`}
+          description={details.description}
+        />
       </header>
 
       <section className="space-y-2">

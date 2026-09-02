@@ -1,5 +1,7 @@
 import type { EmployeeDetails, ManagerOption } from "../types/employee";
 import { EmployeeActions } from "./employee-actions";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface EmployeeProfileProps {
   employee: EmployeeDetails;
@@ -18,21 +20,31 @@ export const EmployeeProfile = ({
     <section className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">{fullName}</h1>
-        <p className="text-muted-foreground">{employee.employeeNumber}</p>
+        <p className="mt-1 text-muted-foreground">{employee.employeeNumber}</p>
+        <Badge
+          variant={
+            employee.employmentStatus === "active" ? "success" : "neutral"
+          }
+          className="mt-2 capitalize"
+        >
+          {employee.employmentStatus}
+        </Badge>
       </div>
       <EmployeeActions
         employeeId={employee.id}
         employmentStatus={employee.employmentStatus}
         managerOptions={managerOptions}
       />
-      <div className="grid gap-4 rounded-xl border p-6 sm:grid-cols-2">
-        <Info label="Email" value={employee.email} />
-        <Info label="Phone" value={employee.phoneNumber} />
-        <Info label="Department" value={employee.department.name} />
-        <Info label="Position" value={employee.position.name} />
-        <Info label="Branch" value={employee.branch?.name} />
-        <Info label="Status" value={employee.employmentStatus} />
-      </div>
+      <Card>
+        <CardContent className="grid gap-4 sm:grid-cols-2">
+          <Info label="Email" value={employee.email} />
+          <Info label="Phone" value={employee.phoneNumber} />
+          <Info label="Department" value={employee.department.name} />
+          <Info label="Position" value={employee.position.name} />
+          <Info label="Branch" value={employee.branch?.name} />
+          <Info label="Status" value={employee.employmentStatus} />
+        </CardContent>
+      </Card>
     </section>
   );
 };

@@ -2,7 +2,7 @@ import { NotificationsPageContent } from "@/features/notification/components/not
 
 export default function EmployeeNotificationsPage() {
   return (
-    <div className="px-4 py-4 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-6xl">
       <NotificationsPageContent />
     </div>
   );

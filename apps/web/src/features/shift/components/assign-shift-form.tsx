@@ -101,10 +101,10 @@ export const AssignShiftForm = ({
   };
 
   return (
-    <section className="rounded-xl border border-foreground/25 p-4 sm:p-5">
+    <section className="rounded-card border border-border bg-surface p-4 shadow-card">
       <div>
         <h3 className="font-semibold">Assign shift</h3>
-        <p className="mt-1 text-sm text-foreground/60">
+        <p className="mt-1 text-sm text-muted-foreground">
           Add a non-overlapping schedule period for this employee.
         </p>
       </div>
@@ -119,14 +119,15 @@ export const AssignShiftForm = ({
             required
             disabled={isSubmitting || !hasActiveShifts}
             aria-invalid={fieldErrors.shiftId ? true : undefined}
-            className="min-w-0 rounded-md border border-foreground/25 bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+            className="min-w-0 rounded-md border border-border-strong bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
           >
             {!hasActiveShifts ? (
               <option value="">No active shifts available</option>
             ) : null}
             {shifts.map((shift) => (
               <option key={shift.id} value={shift.id}>
-                {shift.name} · {formatShiftSchedule(shift.startTime, shift.endTime)}
+                {shift.name} ·{" "}
+                {formatShiftSchedule(shift.startTime, shift.endTime)}
               </option>
             ))}
           </select>
@@ -142,7 +143,7 @@ export const AssignShiftForm = ({
             {shiftWeekdays.map((day) => (
               <label
                 key={day}
-                className="flex items-center gap-2 rounded-md border border-foreground/20 px-3 py-2 text-sm"
+                className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm"
               >
                 <input
                   type="checkbox"
@@ -170,7 +171,7 @@ export const AssignShiftForm = ({
               onChange={(event) => setEffectiveFrom(event.target.value)}
               disabled={isSubmitting || !hasActiveShifts}
               aria-invalid={fieldErrors.effectiveFrom ? true : undefined}
-              className="rounded-md border border-foreground/25 bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-md border border-border-strong bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
             />
             <FieldError messages={fieldErrors.effectiveFrom} />
           </label>
@@ -184,9 +185,9 @@ export const AssignShiftForm = ({
               min={effectiveFrom || undefined}
               disabled={isSubmitting || !hasActiveShifts}
               aria-invalid={fieldErrors.effectiveTo ? true : undefined}
-              className="rounded-md border border-foreground/25 bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-md border border-border-strong bg-background px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
             />
-            <span className="text-xs text-foreground/50">
+            <span className="text-xs text-muted-foreground">
               Optional; leave blank for no end date.
             </span>
             <FieldError messages={fieldErrors.effectiveTo} />
@@ -194,7 +195,7 @@ export const AssignShiftForm = ({
         </div>
 
         {!hasActiveShifts ? (
-          <p className="text-sm text-foreground/60">
+          <p className="text-sm text-muted-foreground">
             Create an active shift before assigning a schedule.
           </p>
         ) : null}
@@ -203,9 +204,7 @@ export const AssignShiftForm = ({
           <p
             role={feedback.type === "error" ? "alert" : "status"}
             className={`text-sm ${
-              feedback.type === "error"
-                ? "text-red-700 dark:text-red-400"
-                : "text-foreground/70"
+              feedback.type === "error" ? "text-destructive" : "text-success"
             }`}
           >
             {feedback.message}
@@ -215,7 +214,7 @@ export const AssignShiftForm = ({
         <button
           type="submit"
           disabled={isSubmitting || !hasActiveShifts}
-          className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-[38px] rounded-control border border-primary bg-primary px-4 text-sm font-medium text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting ? "Assigning..." : "Assign shift"}
         </button>

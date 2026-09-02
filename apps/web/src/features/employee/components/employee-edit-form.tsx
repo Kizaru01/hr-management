@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { FormField } from "@/components/form-field";
 import { SelectField } from "@/components/select-field";
 import { ApiError } from "@/lib/api/api.client";
+import { Button } from "@/components/ui/button";
 
 import { getPositionsByDepartment } from "../api/get-positions-by-department";
 import { updateEmployee } from "../api/update-employee";
@@ -151,7 +152,10 @@ export const EmployeeEditForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+    <form
+      onSubmit={handleSubmit}
+      className="grid gap-4 rounded-card border border-border bg-surface p-4 shadow-card sm:grid-cols-2"
+    >
       <FormField
         label="First name"
         name="firstName"
@@ -210,7 +214,7 @@ export const EmployeeEditForm = ({
       {errorMessage && (
         <div
           role="alert"
-          className="space-y-1 text-sm text-red-700 sm:col-span-2"
+          className="space-y-1 text-sm text-destructive sm:col-span-2"
         >
           <p>{errorMessage}</p>
 
@@ -228,12 +232,13 @@ export const EmployeeEditForm = ({
         </div>
       )}
 
-      <button
+      <Button
+        type="submit"
         disabled={!positionId || isSaving}
-        className="rounded-md border px-4 py-2 sm:col-span-2"
+        className="sm:col-span-2"
       >
         {isSaving ? "Saving..." : "Save changes"}
-      </button>
+      </Button>
     </form>
   );
 };

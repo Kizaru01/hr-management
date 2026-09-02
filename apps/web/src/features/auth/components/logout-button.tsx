@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { logout } from "../api/logout";
 
 export const LogoutButton = () => {
@@ -23,8 +25,15 @@ export const LogoutButton = () => {
   };
 
   return (
-    <button type="button" onClick={handleLogout} disabled={isLoading}>
+    <Button
+      type="button"
+      variant="ghost"
+      onClick={handleLogout}
+      disabled={isLoading}
+      className="w-full justify-start text-secondary-foreground"
+    >
+      <LogOut aria-hidden="true" size={16} />
       {isLoading ? "Signing out..." : "Sign out"}
-    </button>
+    </Button>
   );
 };
