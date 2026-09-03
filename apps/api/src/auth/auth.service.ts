@@ -41,8 +41,12 @@ export class AuthService {
 
     const updatedUser = await this.userRepository.activate(
       user.id,
+      tokenHash,
       passwordHash,
     );
+    if (!updatedUser) {
+      throw new BadRequestException('Failed to activate the account.');
+    }
     const payload = {
       sub: user.id,
       role: user.role,
@@ -59,7 +63,7 @@ export class AuthService {
           lastLoginAt: updatedUser.lastLoginAt,
         },
       },
-      'Login successful.',
+      'Account Activated successful.',
     );
   }
   async login(input: LoginInput) {

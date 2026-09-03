@@ -1,4 +1,4 @@
-export type AuditLogActorRole = "admin" | "hr" | "employee";
+export type AuditLogActorRole = "admin" | "hr" | "employee" | "manager";
 
 export type AuditLogJsonValue =
   | string

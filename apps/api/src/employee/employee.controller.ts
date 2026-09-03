@@ -34,8 +34,6 @@ import { TerminateEmployeeDto } from './dto/create-termination.dto.js';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
-
-  @UseGuards(RolesGuard)
   @Roles('admin', 'hr')
   @Get()
   findAll() {
@@ -43,8 +41,11 @@ export class EmployeeController {
   }
   @Roles('admin', 'hr')
   @Post()
-  create(@Body() input: CreateEmployeeDto) {
-    return this.employeeService.create(input);
+  create(
+    @Body() input: CreateEmployeeDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.employeeService.create(input, user.id);
   }
   @Get('me')
   findMe(@CurrentUser() user: AuthenticatedUser) {
@@ -67,7 +68,6 @@ export class EmployeeController {
     return this.employeeService.updateMe(user.id, input);
   }
   @Patch('me/avatar')
-  @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -87,7 +87,6 @@ export class EmployeeController {
   )
   updateMyAvatar(
     @CurrentUser() user: AuthenticatedUser,
-
     @UploadedFile(
       new ParseFilePipe({
         validators: [
@@ -106,7 +105,6 @@ export class EmployeeController {
     return this.employeeService.updateMyAvatar(user.id, file);
   }
   @Patch(':id/manager')
-  @UseGuards(RolesGuard)
   @Roles('admin', 'hr')
   assignManager(
     @Param('id') id: string,
@@ -116,7 +114,6 @@ export class EmployeeController {
     return this.employeeService.assignManager(id, input, user.id);
   }
   @Patch(':id/terminate')
-  @UseGuards(RolesGuard)
   @Roles('admin', 'hr')
   terminate(
     @Param('id') id: string,

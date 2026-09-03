@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { RequestError } from "@/lib/errors/http-errors";
+import { redirect } from "next/navigation";
 
 interface ErrorBody {
   message?: unknown;
@@ -33,7 +34,7 @@ export async function authenticatedFetch(
   const token = cookieStore.get("access_token")?.value;
 
   if (!token) {
-    throw new RequestError(401, "Unauthenticated.");
+    redirect("/login");
   }
 
   const headers = new Headers(options.headers);

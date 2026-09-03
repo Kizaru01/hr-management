@@ -44,8 +44,10 @@ export class UserRepository {
     });
   }
 
-  findByEmail(email: string) {
-    return this.prisma.user.findUnique({
+  findByEmail(email: string, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+
+    return client.user.findUnique({
       where: { email },
     });
   }
@@ -97,7 +99,6 @@ export class UserRepository {
     return this.prisma.user.findFirst({
       where: {
         activationTokenHash,
-        status: 'pending',
       },
       include: {
         employee: {
@@ -108,15 +109,47 @@ export class UserRepository {
       },
     });
   }
-  activate(id: string, passwordHash: string) {
-    return this.prisma.user.update({
-      where: { id },
+  activate(id: string, activationTokenHash: string, passwordHash: string) {
+    return this.prisma.$transaction(
+      async (tx) => {
+        const result = await tx.user.updateMany({
+          where: {
+            id,
+            status: 'pending',
+            activationTokenHash,
+          },
+          data: {
+            isActive: true,
+            passwordHash,
+            status: 'active',
+          },
+        });
+
+        if (result.count !== 1) {
+          return null;
+        }
+
+        return tx.user.findUnique({ where: { id } });
+      },
+      {
+        isolationLevel: 'Serializable',
+      },
+    );
+  }
+
+  rotateActivationTokenForPending(
+    id: string,
+    activationTokenHash: string,
+    activationExpiresAt: Date,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const client = tx ?? this.prisma;
+
+    return client.user.updateMany({
+      where: { id, status: 'pending' },
       data: {
-        isActive: true,
-        passwordHash,
-        status: 'active',
-        activationTokenHash: null,
-        activationExpiresAt: null,
+        activationTokenHash,
+        activationExpiresAt,
       },
     });
   }

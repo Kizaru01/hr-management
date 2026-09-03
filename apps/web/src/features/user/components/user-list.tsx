@@ -27,6 +27,7 @@ const roles: Array<{ value: UserRole; label: string }> = [
   { value: "admin", label: "Administrator" },
   { value: "hr", label: "HR" },
   { value: "employee", label: "Employee" },
+  { value: "manager", label: "Manager" },
 ];
 
 const desktopColumns =
@@ -162,13 +163,6 @@ export function UserList({
 
   return (
     <div className="min-w-0 space-y-3">
-      <div>
-        <h2 className="font-semibold">Accounts</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Access changes take effect on the next authenticated API request.
-        </p>
-      </div>
-
       {feedback ? (
         <p
           role={feedback.type === "error" ? "alert" : "status"}
@@ -408,7 +402,11 @@ function roleLabel(role: UserRole) {
     return "Administrator";
   }
 
-  return role === "hr" ? "HR" : "Employee";
+  if (role === "hr") {
+    return "HR";
+  }
+
+  return role === "manager" ? "Manager" : "Employee";
 }
 
 function accountStatusLabel(user: ManagedUser) {

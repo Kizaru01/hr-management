@@ -10,6 +10,7 @@ import { Prisma } from '../generated/prisma/client.js';
 type CreateEmployeeData = Omit<CreateEmployeeInput, 'hireDate'> & {
   employeeNumber: string;
   hireDate: Date;
+  userId?: string;
 };
 
 type UpdateEmployeeData = Omit<UpdateEmployeeInput, 'hireDate'> & {
@@ -59,8 +60,10 @@ const workProfileSelect = {
 export class EmployeeRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(input: CreateEmployeeData) {
-    return this.prisma.employee.create({
+  create(input: CreateEmployeeData, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+
+    return client.employee.create({
       data: input,
       include: {
         department: true,
@@ -75,6 +78,9 @@ export class EmployeeRepository {
         department: true,
         position: true,
         branch: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
   }
@@ -103,6 +109,13 @@ export class EmployeeRepository {
       include: {
         department: true,
         position: true,
+        branch: true,
+        user: {
+          select: {
+            id: true,
+            status: true,
+          },
+        },
       },
     });
   }
@@ -124,8 +137,10 @@ export class EmployeeRepository {
       },
     });
   }
-  findByEmail(email: string) {
-    return this.prisma.employee.findUnique({
+  findByEmail(email: string, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+
+    return client.employee.findUnique({
       where: { email },
     });
   }
@@ -164,8 +179,9 @@ export class EmployeeRepository {
     });
   }
 
-  async generateEmployeeNumber() {
-    const counter = await this.prisma.counter.upsert({
+  async generateEmployeeNumber(tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+    const counter = await client.counter.upsert({
       where: {
         key: 'employeeId',
       },

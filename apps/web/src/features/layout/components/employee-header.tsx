@@ -33,7 +33,7 @@ export function EmployeeHeader({ user, unreadCount }: EmployeeHeaderProps) {
                 </p>
               </div>
             </div>
-            <EmployeeNavigation compact />
+            <EmployeeNavigation user={user} compact />
           </div>
         </details>
         <div className="min-w-0">

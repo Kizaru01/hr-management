@@ -19,4 +19,4 @@ export const EMPLOYMENT_TYPES = [
 
 export type EmploymentType = (typeof EMPLOYMENT_TYPES)[number];
 
-export const USER_ROLES = ["employee", "admin", "hr"] as const;
+export const USER_ROLES = ["employee", "manager", "admin", "hr"] as const;

@@ -37,6 +37,15 @@ export class UserController {
     return this.userService.create(input, currentUser.id);
   }
 
+  @Post(':id/resend-invitation')
+  @Roles('admin', 'hr')
+  resendInvitation(
+    @Param('id') id: string,
+    @CurrentUser() currentUser: AuthenticatedUser,
+  ) {
+    return this.userService.resendInvitation(id, currentUser.id);
+  }
+
   @Patch(':id/role')
   updateRole(
     @Param('id') id: string,

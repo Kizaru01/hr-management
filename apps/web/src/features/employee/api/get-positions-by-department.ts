@@ -6,11 +6,14 @@ interface PositionLookup {
   name: string;
 }
 
-export const getPositionsByDepartment = async (departmentId: string) => {
+export const getPositionsByDepartment = async (
+  departmentId: string,
+  signal?: AbortSignal,
+) => {
   const query = new URLSearchParams({ departmentId });
 
   return apiClient<ApiResponse<PositionLookup[]>>(
     `/api/positions?${query}`,
-    { fallbackMessage: "Unable to load positions." },
+    { signal, fallbackMessage: "Unable to load positions." },
   );
 };

@@ -15,6 +15,7 @@ import { EmployeeRepository } from '../employee/employee.repository.js';
 import { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { type ManagedUserRecord, UserRepository } from './user.repository.js';
+import { EmailService } from '../email/email.service.js';
 
 @Injectable()
 export class UserService {
@@ -24,6 +25,7 @@ export class UserService {
     private readonly employeeRepository: EmployeeRepository,
     private readonly prisma: PrismaService,
     private readonly auditLogService: AuditLogService,
+    private readonly emailService: EmailService,
   ) {}
 
   async findAll() {
@@ -49,6 +51,7 @@ export class UserService {
     }
 
     let employeeId: string | undefined;
+    let employeeName: string | undefined;
 
     if (input.employeeNumber) {
       const employee = await this.employeeRepository.findByEmployeeNumber(
@@ -76,6 +79,13 @@ export class UserService {
       }
 
       employeeId = employee.id;
+      employeeName = [
+        employee.firstName,
+        employee.middleName,
+        employee.lastName,
+      ]
+        .filter(Boolean)
+        .join(' ');
     }
 
     const activation = this.activationTokenService.generate();
@@ -133,6 +143,13 @@ export class UserService {
       },
     });
 
+    const invitationSent = await this.trySendInvitation({
+      email: user.email,
+      employeeName,
+      rawToken: activation.token,
+      expiresAt: activation.expiresAt,
+    });
+
     return successResponse(
       {
         user: {
@@ -143,10 +160,79 @@ export class UserService {
           isActive: user.isActive,
           createdAt: user.createdAt,
         },
-        activationToken: activation.token,
+        invitationSent,
       },
-      'User created successfully.',
+      invitationSent
+        ? 'User created successfully. Invitation email sent.'
+        : 'User created successfully, but the invitation email could not be sent.',
     );
+  }
+
+  async resendInvitation(userId: string, currentUserId: string) {
+    const user = await this.userRepository.findForManagementById(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    if (user.status !== 'pending') {
+      throw new BadRequestException(
+        'Only pending accounts can receive another invitation.',
+      );
+    }
+
+    if (user.employee?.employmentStatus === 'terminated') {
+      throw new BadRequestException(
+        'A terminated employee cannot receive an account invitation.',
+      );
+    }
+
+    const activation = this.activationTokenService.generate();
+
+    await this.prisma.$transaction(
+      async (transaction) => {
+        const rotation =
+          await this.userRepository.rotateActivationTokenForPending(
+            user.id,
+            activation.tokenHash,
+            activation.expiresAt,
+            transaction,
+          );
+
+        if (rotation.count !== 1) {
+          throw new ConflictException(
+            'The account is no longer pending activation.',
+          );
+        }
+        await this.auditLogService.create(
+          {
+            actorUserId: currentUserId,
+            action: 'user.invitation.resend',
+            entityType: 'User',
+            entityId: user.id,
+          },
+          transaction,
+        );
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
+
+    await this.emailService.sendAccountInvitation({
+      to: user.email,
+      employeeName: user.employee
+        ? [
+            user.employee.firstName,
+            user.employee.middleName,
+            user.employee.lastName,
+          ]
+            .filter(Boolean)
+            .join(' ')
+        : undefined,
+      rawToken: activation.token,
+      expiresAt: activation.expiresAt,
+    });
+
+    return successResponse(undefined, 'Invitation email sent successfully.');
   }
 
   async updateRole(
@@ -354,5 +440,25 @@ export class UserService {
           }
         : null,
     };
+  }
+
+  private async trySendInvitation(input: {
+    email: string;
+    employeeName?: string;
+    rawToken: string;
+    expiresAt: Date;
+  }) {
+    try {
+      await this.emailService.sendAccountInvitation({
+        to: input.email,
+        employeeName: input.employeeName,
+        rawToken: input.rawToken,
+        expiresAt: input.expiresAt,
+      });
+
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

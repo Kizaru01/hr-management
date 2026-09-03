@@ -1,4 +1,8 @@
-export type PerformanceReviewRole = "admin" | "hr" | "employee";
+export type PerformanceReviewRole =
+  | "admin"
+  | "hr"
+  | "employee"
+  | "manager";
 
 export interface PerformanceReview {
   id: string;

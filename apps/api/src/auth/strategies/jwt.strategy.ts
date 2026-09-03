@@ -5,7 +5,7 @@ import { UserRepository } from '../../user/user.repository';
 
 interface JwtPayload {
   sub: string;
-  role: 'admin' | 'hr' | 'employee';
+  role: 'admin' | 'hr' | 'employee' | 'manager';
 }
 
 @Injectable()

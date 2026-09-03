@@ -14,6 +14,19 @@ export class EmployeeShiftRepository {
       },
     });
   }
+
+  findById(id: string) {
+    return this.prisma.employeeShift.findUnique({
+      where: { id },
+    });
+  }
+
+  delete(id: string) {
+    return this.prisma.employeeShift.delete({
+      where: { id },
+    });
+  }
+
   existingSchedule(
     employeeId: string,
     effectiveFrom: Date,

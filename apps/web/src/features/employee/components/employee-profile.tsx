@@ -33,6 +33,7 @@ export const EmployeeProfile = ({
       <EmployeeActions
         employeeId={employee.id}
         employmentStatus={employee.employmentStatus}
+        user={employee.user}
         managerOptions={managerOptions}
       />
       <Card>

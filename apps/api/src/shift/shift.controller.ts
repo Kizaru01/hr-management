@@ -6,6 +6,7 @@ import {
   Get,
   Patch,
   Param,
+  Delete,
 } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator.js';
@@ -19,7 +20,7 @@ import { AssignShiftDto } from './dto/assign-shift.dto.js';
 @ApiBearerAuth()
 @Controller('shift')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin', 'hr')
+@Roles('admin', 'hr', 'manager')
 export class ShiftController {
   constructor(private readonly shiftService: ShiftService) {}
 
@@ -47,6 +48,11 @@ export class ShiftController {
     @Body() input: AssignShiftDto,
   ) {
     return this.shiftService.assignToEmployee(employeeId, input);
+  }
+
+  @Delete('assignment/:assignmentId')
+  removeAssignment(@Param('assignmentId') assignmentId: string) {
+    return this.shiftService.removeAssignment(assignmentId);
   }
 
   @Patch(':id')

@@ -23,7 +23,7 @@ export class AttendanceController {
   }
 
   @Get('me')
-  @Roles('employee')
+  @Roles('employee', 'manager')
   findMine(
     @CurrentUser() user: AuthenticatedUser,
     @Query('from') from?: string,
@@ -48,6 +48,8 @@ export class AttendanceController {
     return this.attendanceService.getCompanyDailySummary(date);
   }
   @Get('team')
+  @UseGuards(RolesGuard)
+  @Roles('manager')
   getMyTeamDailyAttendance(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: AttendanceQueryDto,
@@ -57,7 +59,7 @@ export class AttendanceController {
     return this.attendanceService.getMyTeamDailyAttendance(user.id, date);
   }
   @Get('me/summary')
-  @Roles('employee')
+  @Roles('employee', 'manager')
   getMySummary(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: AttendanceRangeQueryDto,
@@ -66,7 +68,7 @@ export class AttendanceController {
   }
 
   @Get('me/status')
-  @Roles('employee')
+  @Roles('employee', 'manager')
   getMyDailyStatus(
     @CurrentUser() user: AuthenticatedUser,
     @Query('date') date?: string,

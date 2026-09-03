@@ -41,6 +41,8 @@ export class LeaveController {
     return this.leaveService.findMine(user.id);
   }
   @Get('team')
+  @UseGuards(RolesGuard)
+  @Roles('manager')
   findMyTeamLeaveRequests(@CurrentUser() user: AuthenticatedUser) {
     return this.leaveService.findMyTeamLeaveRequests(user.id);
   }
