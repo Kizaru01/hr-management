@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { apiResponse } from "@/lib/api/authenticated-api";
 import handleError from "@/lib/errors/handle-error";
+import { setAccessTokenCookie } from "@/features/auth/server/set-access-token-cookie";
 
 interface LoginResponse {
   success: boolean;
@@ -10,7 +11,7 @@ interface LoginResponse {
     accessToken: string;
     id: string;
     email: string;
-    role: "admin" | "hr" | "employee";
+    role: "admin" | "hr" | "employee" | "manager";
     lastLoginAt: string;
   };
 }
@@ -47,15 +48,7 @@ export async function POST(request: Request) {
       },
     });
 
-    result.cookies.set({
-      name: "access_token",
-      value: data.data.accessToken,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 15 * 60,
-    });
+    setAccessTokenCookie(result, data.data.accessToken);
 
     return result;
   } catch (error) {

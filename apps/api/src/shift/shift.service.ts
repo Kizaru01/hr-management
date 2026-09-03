@@ -164,6 +164,19 @@ export class ShiftService {
     );
   }
 
+  async removeAssignment(assignmentId: string) {
+    const assignment =
+      await this.employeeShiftRepository.findById(assignmentId);
+
+    if (!assignment) {
+      throw new NotFoundException('Shift assignment not found.');
+    }
+
+    await this.employeeShiftRepository.delete(assignmentId);
+
+    return successResponse(undefined, 'Shift assignment removed successfully.');
+  }
+
   async deactivate(id: string) {
     const shift = await this.shiftRepository.findById(id);
 

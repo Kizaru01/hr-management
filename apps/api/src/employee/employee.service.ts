@@ -22,6 +22,9 @@ import { join } from 'node:path';
 import { AuditLogService } from '../audit-log/audit-log.service.js';
 import { UserRepository } from '../user/user.repository.js';
 import { dateOnlyToUtc } from '../common/dates/date-conversion.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { ActivationTokenService } from '../common/security/activation-token.service.js';
+import { EmailService } from '../email/email.service.js';
 
 @Injectable()
 export class EmployeeService {
@@ -32,9 +35,12 @@ export class EmployeeService {
     private readonly branchRepository: BranchRepository,
     private readonly auditLogService: AuditLogService,
     private readonly userRepository: UserRepository,
+    private readonly prisma: PrismaService,
+    private readonly activationTokenService: ActivationTokenService,
+    private readonly emailService: EmailService,
   ) {}
 
-  async create(input: CreateEmployeeInput) {
+  async create(input: CreateEmployeeInput, currentUserId: string) {
     const { departmentId, positionId, branchId } = input;
 
     await this.validateDepartmentBranchAndPosition(
@@ -45,38 +51,144 @@ export class EmployeeService {
 
     const normalizedEmail = input.email.trim().toLowerCase();
 
-    const existingEmployee =
-      await this.employeeRepository.findByEmail(normalizedEmail);
-
-    if (existingEmployee) {
-      throw new ConflictException(
-        'An employee with this email already exists.',
-      );
-    }
-
-    const employeeNumber =
-      await this.employeeRepository.generateEmployeeNumber();
+    const activation = this.activationTokenService.generate();
 
     try {
-      const employee = await this.employeeRepository.create({
-        ...input,
-        email: normalizedEmail,
-        employeeNumber,
-        hireDate: dateOnlyToUtc(input.hireDate),
+      const { employee, user } = await this.prisma.$transaction(
+        async (transaction) => {
+          const [existingEmployee, existingUser] = await Promise.all([
+            this.employeeRepository.findByEmail(normalizedEmail, transaction),
+            this.userRepository.findByEmail(normalizedEmail, transaction),
+          ]);
+
+          if (existingEmployee) {
+            throw new ConflictException(
+              'An employee with this email already exists.',
+            );
+          }
+
+          if (existingUser) {
+            throw new ConflictException(
+              'A user account with this email already exists.',
+            );
+          }
+
+          const employeeNumber =
+            await this.employeeRepository.generateEmployeeNumber(transaction);
+          const createdUser = await this.userRepository.create(
+            {
+              email: normalizedEmail,
+              role: 'employee',
+              activationTokenHash: activation.tokenHash,
+              activationExpiresAt: activation.expiresAt,
+            },
+            transaction,
+          );
+          const createdEmployee = await this.employeeRepository.create(
+            {
+              ...input,
+              email: normalizedEmail,
+              employeeNumber,
+              hireDate: dateOnlyToUtc(input.hireDate),
+              userId: createdUser.id,
+            },
+            transaction,
+          );
+
+          await Promise.all([
+            this.auditLogService.create(
+              {
+                actorUserId: currentUserId,
+                action: 'employee.create',
+                entityType: 'Employee',
+                entityId: createdEmployee.id,
+                metadata: { employeeNumber: createdEmployee.employeeNumber },
+              },
+              transaction,
+            ),
+            this.auditLogService.create(
+              {
+                actorUserId: currentUserId,
+                action: 'user.create',
+                entityType: 'User',
+                entityId: createdUser.id,
+                metadata: {
+                  email: createdUser.email,
+                  role: createdUser.role,
+                  linkedEmployee: true,
+                },
+              },
+              transaction,
+            ),
+          ]);
+
+          return { employee: createdEmployee, user: createdUser };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+      const invitationSent = await this.trySendInvitation({
+        email: user.email,
+        employeeName: [
+          employee.firstName,
+          employee.middleName,
+          employee.lastName,
+        ]
+          .filter(Boolean)
+          .join(' '),
+        rawToken: activation.token,
+        expiresAt: activation.expiresAt,
       });
 
-      return successResponse(employee, 'Employee created successfully.');
+      return successResponse(
+        { ...employee, invitationSent },
+        invitationSent
+          ? 'Employee and account created successfully. Invitation email sent.'
+          : 'Employee and account created successfully, but the invitation email could not be sent.',
+      );
     } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
         throw new ConflictException(
-          'An employee with this email or employee number already exists.',
+          'An employee or user account with this email already exists.',
+        );
+      }
+
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2034'
+      ) {
+        throw new ConflictException(
+          'Employee creation conflicted with another request. Try again.',
         );
       }
 
       throw error;
+    }
+  }
+
+  private async trySendInvitation(input: {
+    email: string;
+    employeeName: string;
+    rawToken: string;
+    expiresAt: Date;
+  }) {
+    try {
+      await this.emailService.sendAccountInvitation({
+        to: input.email,
+        employeeName: input.employeeName,
+        rawToken: input.rawToken,
+        expiresAt: input.expiresAt,
+      });
+
+      return true;
+    } catch {
+      return false;
     }
   }
   async findMe(userId: string) {
@@ -139,7 +251,8 @@ export class EmployeeService {
 
     if (
       updateData.departmentId !== undefined ||
-      updateData.positionId !== undefined
+      updateData.positionId !== undefined ||
+      updateData.branchId !== undefined
     ) {
       await this.validateDepartmentBranchAndPosition(
         nextDepartmentId,
@@ -489,6 +602,10 @@ export class EmployeeService {
 
     if (!branch) {
       throw new NotFoundException('Branch not found.');
+    }
+
+    if (!branch.isActive) {
+      throw new BadRequestException('Branch must be active.');
     }
   }
 }

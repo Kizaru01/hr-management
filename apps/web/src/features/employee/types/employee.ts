@@ -1,4 +1,7 @@
-import type { UpdateEmployeeInput } from "@hr-management/validation";
+import type {
+  CreateEmployeeInput,
+  UpdateEmployeeInput,
+} from "@hr-management/validation";
 
 export interface EmployeeListItem {
   id: string;
@@ -34,6 +37,27 @@ export interface EmployeeDetails extends EmployeeListItem {
     firstName: string;
     lastName: string;
   } | null;
+  user: {
+    id: string;
+    status: "pending" | "active" | "suspended" | "disabled";
+  } | null;
+}
+
+export interface CreatedEmployee {
+  id: string;
+  employeeNumber: string;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  email: string;
+  hireDate: string;
+  employmentType: CreateEmployeeInput["employmentType"];
+  employmentStatus: string;
+  departmentId: string;
+  positionId: string;
+  branchId: string;
+  userId: string;
+  invitationSent: boolean;
 }
 
 export interface LookupOption {

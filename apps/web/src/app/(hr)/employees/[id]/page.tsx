@@ -67,7 +67,10 @@ export default async function EmployeePage({
         <EmployeeRecordActionLinks employeeId={id} />
       </section>
       <section className="space-y-4">
-        <EmployeeShiftHistory assignments={shiftAssignments.data} />
+        <EmployeeShiftHistory
+          employeeId={id}
+          assignments={shiftAssignments.data}
+        />
       </section>
       {performanceReviews.data.length === 1 && (
         <section className="space-y-4">

@@ -1,5 +1,6 @@
 import type { ManagedUser, UserRole } from "../types/user";
 import { Badge, type BadgeVariant } from "@/components/ui/badge";
+import { ResendInvitationButton } from "./resend-invitation-button";
 
 interface UserDetailsProps {
   user: ManagedUser;
@@ -26,7 +27,7 @@ export function UserDetails({ user }: UserDetailsProps) {
   return (
     <div className="space-y-6">
       <div className="border-b border-border pb-5">
-        <p className="break-words text-lg font-semibold">{user.email}</p>
+        <p className="wrap-break-word text-lg font-semibold">{user.email}</p>
         <Badge
           variant={accountStatusVariant(user)}
           className="mt-3 px-2.5 py-1"
@@ -70,6 +71,13 @@ export function UserDetails({ user }: UserDetailsProps) {
           value={formatTimestamp(user.createdAt, dateFormatter)}
         />
       </dl>
+
+      {user.status === "pending" &&
+      user.linkedEmployee?.employmentStatus !== "terminated" ? (
+        <div className="border-t border-border pt-5">
+          <ResendInvitationButton userId={user.id} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -90,7 +98,11 @@ function roleLabel(role: UserRole) {
     return "Administrator";
   }
 
-  return role === "hr" ? "HR" : "Employee";
+  if (role === "hr") {
+    return "HR";
+  }
+
+  return role === "manager" ? "Manager" : "Employee";
 }
 
 function accountStatusLabel(user: ManagedUser) {

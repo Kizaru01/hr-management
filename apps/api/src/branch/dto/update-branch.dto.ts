@@ -1,4 +1,3 @@
-// update-branch.dto.ts
 import { updateBranchSchema } from '@hr-management/validation';
 import { createZodDto } from 'nestjs-zod';
 

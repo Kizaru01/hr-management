@@ -17,7 +17,7 @@ export default async function EmployeeLayout({
     redirect("/login");
   }
 
-  if (user.role !== "employee") {
+  if (user.role !== "employee" && user.role !== "manager") {
     redirect("/dashboard");
   }
 

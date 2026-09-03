@@ -47,7 +47,10 @@ const navigation: NavigationItem[] = [
   { label: "Team leave", href: "/employee/team/leave", icon: CalendarDays },
 ];
 
-export function EmployeeNavigation({ compact = false }: { compact?: boolean }) {
+export function EmployeeNavigation({
+  user,
+  compact = false,
+}: EmployeeSidebarProps & { compact?: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -55,30 +58,38 @@ export function EmployeeNavigation({ compact = false }: { compact?: boolean }) {
       aria-label="Employee navigation"
       className={cn("space-y-1", compact ? "p-2" : "p-3")}
     >
-      {navigation.map((item) => {
-        const isActive =
-          item.href === "/employee/dashboard"
-            ? pathname === item.href
-            : pathname.startsWith(item.href);
-        const Icon = item.icon;
+      {navigation
+        .filter(
+          (item) =>
+            user.role !== "employee" ||
+            !["/employee/team/attendance", "/employee/team/leave"].includes(
+              item.href,
+            ),
+        )
+        .map((item) => {
+          const isActive =
+            item.href === "/employee/dashboard"
+              ? pathname === item.href
+              : pathname.startsWith(item.href);
+          const Icon = item.icon;
 
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={isActive ? "page" : undefined}
-            className={cn(
-              "flex h-9 items-center gap-3 rounded-control px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              isActive
-                ? "bg-selected text-info"
-                : "text-secondary-foreground hover:bg-hover hover:text-foreground",
-            )}
-          >
-            <Icon aria-hidden="true" size={17} strokeWidth={1.8} />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "flex h-9 items-center gap-3 rounded-control px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                isActive
+                  ? "bg-selected text-info"
+                  : "text-secondary-foreground hover:bg-hover hover:text-foreground",
+              )}
+            >
+              <Icon aria-hidden="true" size={17} strokeWidth={1.8} />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
     </nav>
   );
 }
@@ -97,7 +108,7 @@ export function EmployeeSidebar({ user }: EmployeeSidebarProps) {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto py-2">
-        <EmployeeNavigation />
+        <EmployeeNavigation user={user} />
       </div>
 
       <div className="shrink-0 border-t border-border p-3">

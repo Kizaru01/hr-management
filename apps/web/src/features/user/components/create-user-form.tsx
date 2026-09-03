@@ -17,6 +17,7 @@ const roleOptions: Array<{ value: UserRole; label: string }> = [
   { value: "employee", label: "Employee" },
   { value: "hr", label: "HR" },
   { value: "admin", label: "Administrator" },
+  { value: "manager", label: "Manager" },
 ];
 
 interface CreateUserFormProps {
@@ -29,8 +30,6 @@ export function CreateUserForm({ onCancel }: CreateUserFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
-  const [activationToken, setActivationToken] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -49,8 +48,6 @@ export function CreateUserForm({ onCancel }: CreateUserFormProps) {
 
     setFeedback(null);
     setFieldErrors({});
-    setActivationToken(null);
-    setCopied(false);
 
     if (!result.success) {
       setFeedback({
@@ -71,8 +68,10 @@ export function CreateUserForm({ onCancel }: CreateUserFormProps) {
 
       form.reset();
       setRole("employee");
-      setActivationToken(response.data.activationToken);
-      setFeedback({ type: "success", message: response.message });
+      setFeedback({
+        type: response.data.invitationSent ? "success" : "error",
+        message: response.message,
+      });
       router.refresh();
     } catch (error) {
       const backendFieldErrors =
@@ -90,19 +89,6 @@ export function CreateUserForm({ onCancel }: CreateUserFormProps) {
       setFieldErrors(backendFieldErrors);
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const copyActivationToken = async () => {
-    if (!activationToken) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(activationToken);
-      setCopied(true);
-    } catch {
-      setCopied(false);
     }
   };
 
@@ -174,26 +160,6 @@ export function CreateUserForm({ onCancel }: CreateUserFormProps) {
         >
           {feedback.message}
         </p>
-      ) : null}
-
-      {activationToken ? (
-        <div className="rounded-md border border-border-strong bg-hover p-3">
-          <p className="text-sm font-medium">Activation token</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            This token is returned once and expires after 24 hours. Share it
-            through an approved secure channel.
-          </p>
-          <code className="mt-3 block break-all rounded border border-border bg-background p-2 text-xs">
-            {activationToken}
-          </code>
-          <button
-            type="button"
-            onClick={copyActivationToken}
-            className="mt-3 rounded-md border border-border-strong px-3 py-1.5 text-sm font-medium hover:bg-hover"
-          >
-            {copied ? "Copied" : "Copy token"}
-          </button>
-        </div>
       ) : null}
 
       <div className="flex justify-end gap-2 border-t border-border pt-4">

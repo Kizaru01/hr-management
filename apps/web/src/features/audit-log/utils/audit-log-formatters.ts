@@ -88,6 +88,7 @@ const roleLabels: Record<AuditLogActorRole, string> = {
   admin: "Admin",
   hr: "HR",
   employee: "Employee",
+  manager: "Manager",
 };
 
 const metadataLabels: Record<string, string> = {

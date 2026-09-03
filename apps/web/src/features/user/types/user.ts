@@ -1,4 +1,4 @@
-export type UserRole = "admin" | "hr" | "employee";
+export type UserRole = "admin" | "hr" | "employee" | "manager";
 
 export type UserStatus = "pending" | "active" | "suspended" | "disabled";
 
@@ -25,5 +25,5 @@ export interface CreatedUser {
     ManagedUser,
     "id" | "email" | "role" | "status" | "isActive" | "createdAt"
   >;
-  activationToken: string;
+  invitationSent: boolean;
 }

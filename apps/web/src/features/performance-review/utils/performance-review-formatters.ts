@@ -11,6 +11,7 @@ const performanceReviewRoleLabels: Record<PerformanceReviewRole, string> = {
   admin: "Admin",
   hr: "HR",
   employee: "Employee",
+  manager: "Manager",
 };
 
 export const formatPerformanceReviewDate = (value: string) =>

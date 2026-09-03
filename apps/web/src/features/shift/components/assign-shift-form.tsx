@@ -80,7 +80,7 @@ export const AssignShiftForm = ({
       form.reset();
       setEffectiveFrom("");
       setFeedback({ type: "success", message: response.message });
-      router.refresh();
+      router.push(`/employees/${employeeId}`);
     } catch (error) {
       const backendFieldErrors =
         error instanceof ApiError && error.details ? error.details : {};

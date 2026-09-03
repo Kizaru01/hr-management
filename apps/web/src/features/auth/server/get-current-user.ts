@@ -4,7 +4,7 @@ import { RequestError } from "@/lib/errors/http-errors";
 export interface CurrentUser {
   id: string;
   email: string;
-  role: "admin" | "hr" | "employee";
+  role: "admin" | "hr" | "employee" | "manager";
 }
 
 interface CurrentUserResponse {
