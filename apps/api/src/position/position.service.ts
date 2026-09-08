@@ -1,3 +1,4 @@
+import type { PositionQueryInput } from '@hr-management/validation';
 import { normalizeName } from '@hr-management/domain';
 import type {
   CreatePositionInput,
@@ -42,15 +43,20 @@ export class PositionService {
     return successResponse(positions, 'Positions retrieved successfully.');
   }
 
-  async findAllForDepartment(departmentId: string) {
+  async findAllForDepartment(departmentId: string, query?: PositionQueryInput) {
     const department = await this.departmentRepository.findById(departmentId);
 
     if (!department) {
       throw new NotFoundException('Department not found.');
     }
 
-    const positions =
-      await this.positionRepository.findAllForDepartment(departmentId);
+    const positions = await (query
+      ? this.positionRepository.findAllForDepartment(
+          departmentId,
+          undefined,
+          query,
+        )
+      : this.positionRepository.findAllForDepartment(departmentId));
 
     return successResponse(
       positions.map(mapPosition),

@@ -1,7 +1,9 @@
+import { DepartmentQueryDto } from './dto/department-query.dto.js';
 import {
   Body,
   Controller,
   Get,
+  Query,
   Param,
   Post,
   Patch,
@@ -25,8 +27,8 @@ export class DepartmentController {
   constructor(private readonly departmentService: DepartmentService) {}
 
   @Get()
-  findAll() {
-    return this.departmentService.findAll();
+  findAll(@Query() query?: DepartmentQueryDto) {
+    return this.departmentService.findAll(query);
   }
 
   @Get(':id')

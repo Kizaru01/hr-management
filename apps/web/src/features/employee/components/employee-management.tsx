@@ -1,5 +1,13 @@
 "use client";
 
+import type { EmployeeQueryInput } from "@hr-management/validation";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilters } from "@/hooks/use-list-filters";
+import {
+  employeeFilterControls,
+  employeeQueryKeys,
+} from "../utils/list-filters";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -14,7 +22,12 @@ import { EmployeeTable } from "./employee-table";
 import { ResendInvitationButton } from "@/features/user/components/resend-invitation-button";
 
 interface EmployeeManagementProps {
+  query: EmployeeQueryInput;
+  noMatchingResults: boolean;
   employees: EmployeeListItem[];
+  filterDepartments: LookupOption[];
+  filterBranches: LookupOption[];
+  filterPositions: LookupOption[];
   departments: LookupOption[];
   branches: LookupOption[];
 }
@@ -28,11 +41,17 @@ interface CreatedEmployeeNotice {
 }
 
 export function EmployeeManagement({
+  query,
+  noMatchingResults,
+  filterDepartments,
+  filterBranches,
+  filterPositions,
   employees,
   departments,
   branches,
 }: EmployeeManagementProps) {
   const router = useRouter();
+  const filters = useListFilters(query, employeeQueryKeys);
   const sheet = useSheetController<"create">();
   const [createdEmployee, setCreatedEmployee] =
     useState<CreatedEmployeeNotice | null>(null);
@@ -47,9 +66,7 @@ export function EmployeeManagement({
             type="button"
             aria-haspopup="dialog"
             aria-controls="create-employee-sheet"
-            onClick={(event) =>
-              sheet.openSheet("create", event.currentTarget)
-            }
+            onClick={(event) => sheet.openSheet("create", event.currentTarget)}
           >
             <Plus aria-hidden="true" className="size-4" />
             Create employee
@@ -66,7 +83,8 @@ export function EmployeeManagement({
               className={buttonStyles({
                 variant: "ghost",
                 size: "small",
-                className: "h-auto px-0 text-success underline underline-offset-4",
+                className:
+                  "h-auto px-0 text-success underline underline-offset-4",
               })}
             >
               View {createdEmployee.name}
@@ -80,7 +98,27 @@ export function EmployeeManagement({
         </Feedback>
       ) : null}
 
-      <EmployeeTable employees={employees} />
+      <ListToolbar
+        label="Filter employees"
+        placeholder="Name, email, or employee number"
+        filters={employeeFilterControls(
+          filterDepartments,
+          filterBranches,
+          filterPositions,
+          Boolean(filters.values.departmentId) &&
+            filters.values.departmentId === query.departmentId,
+        )}
+        state={filters}
+        noMatchingResults={noMatchingResults}
+        onFilterChange={(key, value) =>
+          filters.change({
+            [key]: value || undefined,
+            ...(key === "departmentId" ? { positionId: undefined } : {}),
+          })
+        }
+      />
+
+      {!noMatchingResults ? <EmployeeTable employees={employees} /> : null}
 
       <Sheet
         id="create-employee-sheet"

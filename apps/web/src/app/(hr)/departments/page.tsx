@@ -1,8 +1,18 @@
+import type { ListSearchParams } from "@/lib/list-query";
+import { normalizeListUrl } from "@/lib/normalize-list-url";
+import { normalizeDepartmentQuery } from "@/features/departments/utils/list-filters";
 import { DepartmentManagement } from "@/features/departments/components/department-management";
 import { getDepartments } from "@/features/departments/server/get-departments";
 import { getEmployees } from "@/features/employee/server/get-employees";
 
-export default async function DepartmentsPage() {
+export default async function DepartmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<ListSearchParams>;
+}) {
+  const raw = await searchParams;
+  const query = normalizeDepartmentQuery(raw);
+  normalizeListUrl("/departments", raw, query);
   const [departmentResponse, employeeResponse] = await Promise.all([
     getDepartments(),
     getEmployees(),
@@ -24,9 +34,18 @@ export default async function DepartmentsPage() {
       };
     });
 
+  const filtered = Object.values(query).some(Boolean)
+    ? await getDepartments(query)
+    : departmentResponse;
+
   return (
     <DepartmentManagement
-      departments={departmentResponse.data}
+      departments={filtered.data}
+      allDepartments={departmentResponse.data}
+      query={query}
+      noMatchingResults={
+        filtered.data.length === 0 && departmentResponse.data.length > 0
+      }
       departmentHeadOptions={departmentHeadOptions}
     />
   );

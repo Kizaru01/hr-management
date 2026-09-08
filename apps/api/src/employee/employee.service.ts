@@ -1,3 +1,4 @@
+import type { EmployeeQueryInput } from '@hr-management/validation';
 import type {
   AssignManagerInput,
   CreateEmployeeInput,
@@ -200,8 +201,10 @@ export class EmployeeService {
 
     return successResponse(employee, 'Employee retrieved successfully.');
   }
-  async findAll() {
-    const employees = await this.employeeRepository.findAll();
+  async findAll(query?: EmployeeQueryInput) {
+    const employees = await (query
+      ? this.employeeRepository.findAll(query)
+      : this.employeeRepository.findAll());
 
     return successResponse(employees, 'Employees retrieved successfully.');
   }

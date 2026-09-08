@@ -1,7 +1,9 @@
+import { BranchQueryDto } from './dto/branch-query.dto.js';
 import {
   Body,
   Controller,
   Get,
+  Query,
   Param,
   Patch,
   Post,
@@ -25,8 +27,8 @@ export class BranchController {
   constructor(private readonly branchService: BranchService) {}
 
   @Get()
-  findAll() {
-    return this.branchService.findAll();
+  findAll(@Query() query?: BranchQueryDto) {
+    return this.branchService.findAll(query);
   }
 
   @Get(':id')

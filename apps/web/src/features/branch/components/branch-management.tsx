@@ -1,5 +1,10 @@
 "use client";
 
+import type { BranchQueryInput } from "@hr-management/validation";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilters } from "@/hooks/use-list-filters";
+import { branchFilters, branchQueryKeys } from "../utils/list-filters";
+
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Sheet, useSheetController } from "@/components/sheet";
@@ -13,6 +18,8 @@ import { BranchList } from "./branch-list";
 import { BranchStatusDialog } from "./branch-status-dialog";
 
 interface BranchManagementProps {
+  query: BranchQueryInput;
+  noMatchingResults: boolean;
   branches: Branch[];
 }
 
@@ -26,7 +33,12 @@ type Feedback = {
   message: string;
 };
 
-export function BranchManagement({ branches }: BranchManagementProps) {
+export function BranchManagement({
+  branches,
+  query,
+  noMatchingResults,
+}: BranchManagementProps) {
+  const filters = useListFilters(query, branchQueryKeys);
   const sheet = useSheetController<BranchSheetContent>();
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [statusBranch, setStatusBranch] = useState<Branch | null>(null);
@@ -68,14 +80,24 @@ export function BranchManagement({ branches }: BranchManagementProps) {
         </FeedbackMessage>
       ) : null}
 
-      <BranchList
-        branches={branches}
-        selectedBranchId={selectedBranch?.id}
-        onSelect={(branch, trigger) => {
-          setFeedback(null);
-          sheet.openSheet({ type: "details", branch }, trigger);
-        }}
+      <ListToolbar
+        label="Filter branches"
+        placeholder="Name or code"
+        filters={branchFilters}
+        state={filters}
+        noMatchingResults={noMatchingResults}
       />
+
+      {!noMatchingResults ? (
+        <BranchList
+          branches={branches}
+          selectedBranchId={selectedBranch?.id}
+          onSelect={(branch, trigger) => {
+            setFeedback(null);
+            sheet.openSheet({ type: "details", branch }, trigger);
+          }}
+        />
+      ) : null}
 
       <Sheet
         id="branch-sheet"

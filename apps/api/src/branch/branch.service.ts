@@ -1,3 +1,4 @@
+import type { BranchQueryInput } from '@hr-management/validation';
 import {
   ConflictException,
   Injectable,
@@ -20,8 +21,10 @@ export class BranchService {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  async findAll() {
-    const branches = await this.branchRepository.findAll();
+  async findAll(query?: BranchQueryInput) {
+    const branches = await (query
+      ? this.branchRepository.findAll(undefined, query)
+      : this.branchRepository.findAll());
 
     return successResponse(
       branches.map(mapBranch),

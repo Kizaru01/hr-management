@@ -1,5 +1,10 @@
 "use client";
 
+import type { PositionQueryInput } from "@hr-management/validation";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilters } from "@/hooks/use-list-filters";
+import { positionFilters, positionQueryKeys } from "../utils/list-filters";
+
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Sheet, useSheetController } from "@/components/sheet";
@@ -11,6 +16,8 @@ import { PositionForm } from "./position-form";
 import { PositionList } from "./position-list";
 
 interface PositionManagementProps {
+  query: PositionQueryInput;
+  noMatchingResults: boolean;
   department: PositionDepartmentSummary;
   positions: Position[];
 }
@@ -26,9 +33,12 @@ type Feedback = {
 };
 
 export function PositionManagement({
+  query,
+  noMatchingResults,
   department,
   positions,
 }: PositionManagementProps) {
+  const filters = useListFilters(query, positionQueryKeys);
   const sheet = useSheetController<PositionSheetContent>();
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const selectedPosition =
@@ -80,14 +90,24 @@ export function PositionManagement({
         </FeedbackMessage>
       ) : null}
 
-      <PositionList
-        positions={positions}
-        selectedPositionId={selectedPosition?.id}
-        onSelect={(position, trigger) => {
-          setFeedback(null);
-          sheet.openSheet({ type: "details", position }, trigger);
-        }}
+      <ListToolbar
+        label="Filter positions"
+        placeholder="Position name"
+        filters={positionFilters}
+        state={filters}
+        noMatchingResults={noMatchingResults}
       />
+
+      {!noMatchingResults ? (
+        <PositionList
+          positions={positions}
+          selectedPositionId={selectedPosition?.id}
+          onSelect={(position, trigger) => {
+            setFeedback(null);
+            sheet.openSheet({ type: "details", position }, trigger);
+          }}
+        />
+      ) : null}
 
       <Sheet
         id="position-sheet"

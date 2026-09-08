@@ -1,5 +1,10 @@
 "use client";
 
+import type { DepartmentQueryInput } from "@hr-management/validation";
+import { ListToolbar } from "@/components/list-toolbar";
+import { useListFilters } from "@/hooks/use-list-filters";
+import { departmentFilters, departmentQueryKeys } from "../utils/list-filters";
+
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Sheet, useSheetController } from "@/components/sheet";
@@ -12,7 +17,10 @@ import { DepartmentForm } from "./department-form";
 import { DepartmentList } from "./department-list";
 
 interface DepartmentManagementProps {
+  query: DepartmentQueryInput;
+  noMatchingResults: boolean;
   departments: Department[];
+  allDepartments: Department[];
   departmentHeadOptions: DepartmentHeadOption[];
 }
 
@@ -27,9 +35,13 @@ type Feedback = {
 };
 
 export function DepartmentManagement({
+  query,
+  noMatchingResults,
+  allDepartments,
   departments,
   departmentHeadOptions,
 }: DepartmentManagementProps) {
+  const filters = useListFilters(query, departmentQueryKeys);
   const sheet = useSheetController<DepartmentSheetContent>();
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const selectedDepartment =
@@ -37,7 +49,7 @@ export function DepartmentManagement({
       ? sheet.content.department
       : null;
   const availableDepartmentHeads = getAvailableDepartmentHeads(
-    departments,
+    allDepartments,
     departmentHeadOptions,
     selectedDepartment?.id,
   );
@@ -74,14 +86,24 @@ export function DepartmentManagement({
         </FeedbackMessage>
       ) : null}
 
-      <DepartmentList
-        departments={departments}
-        selectedDepartmentId={selectedDepartment?.id}
-        onSelect={(department, trigger) => {
-          setFeedback(null);
-          sheet.openSheet({ type: "details", department }, trigger);
-        }}
+      <ListToolbar
+        label="Filter departments"
+        placeholder="Name or code"
+        filters={departmentFilters}
+        state={filters}
+        noMatchingResults={noMatchingResults}
       />
+
+      {!noMatchingResults ? (
+        <DepartmentList
+          departments={departments}
+          selectedDepartmentId={selectedDepartment?.id}
+          onSelect={(department, trigger) => {
+            setFeedback(null);
+            sheet.openSheet({ type: "details", department }, trigger);
+          }}
+        />
+      ) : null}
 
       <Sheet
         id="department-sheet"

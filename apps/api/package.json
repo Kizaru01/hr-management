@@ -84,10 +84,21 @@
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
+      "^.+\\.(t|j)s$": [
+        "ts-jest",
+        {
+          "tsconfig": {
+            "module": "CommonJS",
+            "moduleResolution": "Node",
+            "resolvePackageJsonExports": false
+          }
+        }
+      ]
     },
     "moduleNameMapper": {
-      "^(\\.{1,2}/.*)\\.js$": "$1"
+      "^(\\.{1,2}/.*)\\.js$": "$1",
+      "^@hr-management/validation$": "<rootDir>/../../../packages/validation/src/index.ts",
+      "^@hr-management/constants$": "<rootDir>/../../../packages/constants/src/index.ts"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

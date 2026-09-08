@@ -1,9 +1,11 @@
+import { EmployeeQueryDto } from './dto/employee-query.dto.js';
 import {
   Body,
   Controller,
   Delete,
   FileTypeValidator,
   Get,
+  Query,
   MaxFileSizeValidator,
   Param,
   ParseFilePipe,
@@ -36,8 +38,8 @@ export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
   @Roles('admin', 'hr')
   @Get()
-  findAll() {
-    return this.employeeService.findAll();
+  findAll(@Query() query?: EmployeeQueryDto) {
+    return this.employeeService.findAll(query);
   }
   @Roles('admin', 'hr')
   @Post()

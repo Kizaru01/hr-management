@@ -1,3 +1,4 @@
+import type { DepartmentQueryInput } from '@hr-management/validation';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { Prisma } from '../generated/prisma/client.js';
@@ -39,10 +40,22 @@ export type DepartmentRecord = Prisma.DepartmentGetPayload<{
 export class DepartmentRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(transaction?: Prisma.TransactionClient) {
+  findAll(
+    transaction?: Prisma.TransactionClient,
+    query: DepartmentQueryInput = {},
+  ) {
     const client = transaction ?? this.prisma;
 
     return client.department.findMany({
+      where: {
+        ...(query.status && { isActive: query.status === 'active' }),
+        ...(query.q && {
+          OR: [
+            { name: { contains: query.q, mode: 'insensitive' } },
+            { code: { contains: query.q, mode: 'insensitive' } },
+          ],
+        }),
+      },
       select: departmentRecordSelect,
       orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
     });
