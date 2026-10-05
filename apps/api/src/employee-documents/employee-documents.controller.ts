@@ -19,10 +19,13 @@ import type { AuthenticatedUser } from '../auth/types/user.type';
 import { CreateEmployeeDocumentDto } from './dto/create-employee-document.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { extname, join } from 'node:path';
-import { diskStorage } from 'multer';
+import { memoryStorage } from 'multer';
 import type { Response } from 'express';
-
+import { NotFoundException } from '@nestjs/common';
+import { get } from '@vercel/blob';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { basename, join } from 'node:path';
 @ApiBearerAuth()
 @Controller('employee')
 @UseGuards(JwtAuthGuard)
@@ -35,15 +38,7 @@ export class EmployeeDocumentsController {
   @Roles('admin', 'hr')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads/employee-documents',
-
-        filename: (_req, file, callback) => {
-          const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-
-          callback(null, `${uniqueName}${extname(file.originalname)}`);
-        },
-      }),
+      storage: memoryStorage(),
 
       limits: {
         fileSize: 10 * 1024 * 1024,
@@ -92,9 +87,79 @@ export class EmployeeDocumentsController {
       user.role,
     );
 
-    const filePath = join(process.cwd(), document.fileUrl);
+    response.setHeader('Cache-Control', 'private, no-store');
+    response.setHeader('X-Content-Type-Options', 'nosniff');
 
-    return response.sendFile(filePath);
+    // Support existing files stored on local disk.
+    const localPrefix = 'uploads/employee-documents/';
+
+    if (document.fileUrl.startsWith(localPrefix)) {
+      const filename = document.fileUrl.slice(localPrefix.length);
+
+      if (!/^[\w-]+\.(pdf|jpe?g|png)$/i.test(filename)) {
+        throw new NotFoundException('Document file not found.');
+      }
+
+      const directory = join(process.cwd(), 'uploads', 'employee-documents');
+
+      return response.download(join(directory, filename));
+    }
+
+    // Accept only the private Blob URL format created by our upload flow.
+    let blobUrl: URL;
+
+    try {
+      blobUrl = new URL(document.fileUrl);
+    } catch {
+      throw new NotFoundException('Document file not found.');
+    }
+
+    if (
+      blobUrl.protocol !== 'https:' ||
+      !/^[a-z0-9-]+\.private\.blob\.vercel-storage\.com$/i.test(
+        blobUrl.hostname,
+      ) ||
+      !/^\/employee-documents\/[\w-]+\.(pdf|jpe?g|png)$/i.test(blobUrl.pathname)
+    ) {
+      throw new NotFoundException('Document file not found.');
+    }
+
+    // Use the pathname so the SDK reads from our configured store.
+    const result = await get(blobUrl.pathname.slice(1), {
+      access: 'private',
+    });
+
+    if (!result || result.statusCode !== 200 || !result.stream) {
+      throw new NotFoundException('Document file not found.');
+    }
+
+    response.attachment(basename(result.blob.pathname));
+    response.setHeader(
+      'Content-Type',
+      result.blob.contentType ?? 'application/octet-stream',
+    );
+
+    const reader = result.stream.getReader();
+
+    async function* chunks() {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+
+          if (done) return;
+
+          yield value;
+        }
+      } finally {
+        try {
+          await reader.cancel();
+        } finally {
+          reader.releaseLock();
+        }
+      }
+    }
+
+    await pipeline(Readable.from(chunks()), response);
   }
   @Patch('documents/:id/deactivate')
   @UseGuards(RolesGuard)

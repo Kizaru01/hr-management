@@ -2,10 +2,13 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { unlink } from 'node:fs/promises';
+import { BlobError, put, del } from '@vercel/blob';
+import { Prisma } from '../generated/prisma/client.js';
+import { randomUUID } from 'node:crypto';
 import { EmployeeRepository } from '../employee/employee.repository';
 import { CreateEmployeeDocumentInput } from '@hr-management/validation';
 import { successResponse } from '../common/responses/success-response';
@@ -37,7 +40,9 @@ export class EmployeeDocumentService {
     if (!file) {
       throw new BadRequestException('Document file is required.');
     }
+    let stage = 'validation';
     let documentPersisted = false;
+    let uploadedBlobUrl: string | undefined;
 
     try {
       const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png'];
@@ -48,17 +53,46 @@ export class EmployeeDocumentService {
         );
       }
 
-      const fileUrl = `uploads/employee-documents/${file.filename}`;
+      if (!Buffer.isBuffer(file.buffer)) {
+        throw new InternalServerErrorException('Internal server error.');
+      }
+
+      stage = 'employee lookup';
       const employee = await this.employeeRepository.findById(employeeId);
 
       if (!employee) {
         throw new NotFoundException('Employee not found.');
       }
 
+      stage = 'storage configuration';
+      if (!process.env.BLOB_READ_WRITE_TOKEN) {
+        throw new InternalServerErrorException('Internal server error.');
+      }
+
+      const extension =
+        file.mimetype === 'application/pdf'
+          ? 'pdf'
+          : file.mimetype === 'image/jpeg'
+            ? 'jpg'
+            : 'png';
+
+      stage = 'blob upload';
+      const blob = await put(
+        `employee-documents/${randomUUID()}.${extension}`,
+        file.buffer,
+        {
+          access: 'private',
+          contentType: file.mimetype,
+        },
+      );
+
+      uploadedBlobUrl = blob.url;
+
+      stage = 'document persistence';
       const document = await this.employeeDocumentRepository.create({
         title: input.title.trim(),
         type: input.type.trim(),
-        fileUrl,
+        fileUrl: blob.url,
         issuedAt: input.issuedAt ? dateOnlyToUtc(input.issuedAt) : undefined,
         expiresAt: input.expiresAt ? dateOnlyToUtc(input.expiresAt) : undefined,
 
@@ -77,38 +111,75 @@ export class EmployeeDocumentService {
       documentPersisted = true;
 
       if (employee.userId) {
-        await this.notificationService.create({
-          userId: employee.userId,
-          title: 'New employee document',
-          message: `${document.title} has been added to your employee documents.`,
-          type: 'document',
-          resourceType: 'employee_document',
-          resourceId: document.id,
-        });
+        try {
+          await this.notificationService.create({
+            userId: employee.userId,
+            title: 'New employee document',
+            message: `${document.title} has been added to your employee documents.`,
+            type: 'document',
+            resourceType: 'employee_document',
+            resourceId: document.id,
+          });
+        } catch (error) {
+          this.logCreateFailure('notification after persistence', error);
+        }
       }
-      await this.auditLogService.create({
-        actorUserId: uploadedByUserId,
-        action: 'employee_document.create',
-        entityType: 'EmployeeDocument',
-        entityId: document.id,
-        metadata: {
-          employeeId: employee.id,
-          title: document.title,
-          type: document.type,
-        },
-      });
+      try {
+        await this.auditLogService.create({
+          actorUserId: uploadedByUserId,
+          action: 'employee_document.create',
+          entityType: 'EmployeeDocument',
+          entityId: document.id,
+          metadata: {
+            employeeId: employee.id,
+            title: document.title,
+            type: document.type,
+          },
+        });
+      } catch (error) {
+        this.logCreateFailure('audit after persistence', error);
+      }
       return successResponse(
         { id: document.id },
         'Employee document created successfully.',
       );
     } catch (error) {
-      if (!documentPersisted) {
-        await this.removeUploadedFile(file);
+      this.logCreateFailure(stage, error);
+
+      if (uploadedBlobUrl && !documentPersisted) {
+        try {
+          await del(uploadedBlobUrl);
+        } catch (cleanupError) {
+          this.logCreateFailure(
+            'blob cleanup before persistence',
+            cleanupError,
+          );
+        }
       }
 
       throw error;
     }
   }
+  private logCreateFailure(stage: string, error: unknown) {
+    // Never log exception messages/stacks: providers can include credentials or data.
+    const category =
+      error instanceof Prisma.PrismaClientKnownRequestError
+        ? 'database'
+        : error instanceof BlobError
+          ? 'blob'
+          : error instanceof Error
+            ? 'application'
+            : 'unknown';
+    const code =
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      /^P\d{4}$/.test(error.code)
+        ? error.code
+        : 'unavailable';
+    this.logger.error(
+      `Employee document creation stage=${stage} category=${category} code=${code}`,
+    );
+  }
+
   async findByEmployeeId(employeeId: string) {
     const employee = await this.employeeRepository.findById(employeeId);
 
@@ -123,14 +194,12 @@ export class EmployeeDocumentService {
 
     return successResponse(data, 'Employee documents retrieved successfully.');
   }
-
   async findAll() {
     const documents = await this.employeeDocumentRepository.findAllActive();
     const data = documents.map(mapManagedEmployeeDocumentListItem);
 
     return successResponse(data, 'Employee documents retrieved successfully.');
   }
-
   async findMyDocuments(userId: string) {
     const employee = await this.employeeRepository.findByUserId(userId);
 
@@ -205,20 +274,5 @@ export class EmployeeDocumentService {
     }
 
     return document;
-  }
-
-  private async removeUploadedFile(file: Express.Multer.File) {
-    try {
-      await unlink(file.path);
-    } catch (error) {
-      const cleanupError = error as NodeJS.ErrnoException;
-
-      if (cleanupError.code !== 'ENOENT') {
-        this.logger.error(
-          `Failed to remove uploaded file: ${file.path}`,
-          cleanupError.stack,
-        );
-      }
-    }
   }
 }

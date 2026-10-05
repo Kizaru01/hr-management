@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError } from "@/lib/api/api.client";
@@ -39,12 +41,18 @@ export const MyLeaveRequests = ({ leaveRequests }: MyLeaveRequestsProps) => {
     setPendingLeaveId(leaveRequestId);
     setFeedback(null);
 
+    let mutationConfirmed = false;
     try {
-      const response = await cancelLeave(leaveRequestId);
+      await actionFeedback(() => cancelLeave(leaveRequestId), {
+        success: "Leave request cancelled.",
+        error: "Unable to cancel leave. Please try again.",
+      });
+      mutationConfirmed = true;
 
-      setFeedback({ type: "success", message: response.message });
+      setFeedback(null);
       router.refresh();
     } catch (error) {
+      if (mutationConfirmed) return;
       setFeedback({
         type: "error",
         message:

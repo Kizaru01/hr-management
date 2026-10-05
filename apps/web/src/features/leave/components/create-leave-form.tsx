@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createLeaveSchema } from "@hr-management/validation";
@@ -37,6 +39,7 @@ export const CreateLeaveForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const validationFormRef = useValidationFocus(fieldErrors);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -68,13 +71,19 @@ export const CreateLeaveForm = () => {
 
     setIsSubmitting(true);
 
+    let mutationConfirmed = false;
     try {
-      const response = await createLeave(result.data);
+      await actionFeedback(() => createLeave(result.data), {
+        success: "Leave request submitted.",
+        error: "Unable to create leave. Please try again.",
+      });
+      mutationConfirmed = true;
 
       form.reset();
-      setFeedback({ type: "success", message: response.message });
+      setFeedback(null);
       router.refresh();
     } catch (error) {
+      if (mutationConfirmed) return;
       setFeedback({
         type: "error",
         message:
@@ -99,7 +108,7 @@ export const CreateLeaveForm = () => {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
+      <form ref={validationFormRef} onSubmit={handleSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1" htmlFor="leave-type">
           <span className="text-sm font-medium">Leave Type</span>
           <select

@@ -1,3 +1,4 @@
+import { PositionQueryDto } from './dto/position-query.dto.js';
 import {
   Body,
   Controller,
@@ -71,7 +72,12 @@ export class DepartmentPositionController {
   constructor(private readonly positionService: PositionService) {}
 
   @Get()
-  findAll(@Param('departmentId') departmentId: string) {
-    return this.positionService.findAllForDepartment(departmentId);
+  findAll(
+    @Param('departmentId') departmentId: string,
+    @Query() query?: PositionQueryDto,
+  ) {
+    return query
+      ? this.positionService.findAllForDepartment(departmentId, query)
+      : this.positionService.findAllForDepartment(departmentId);
   }
 }

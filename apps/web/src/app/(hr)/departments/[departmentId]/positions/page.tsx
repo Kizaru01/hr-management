@@ -1,3 +1,7 @@
+import type { ListSearchParams } from "@/lib/list-query";
+import { normalizeListUrl } from "@/lib/normalize-list-url";
+import { normalizePositionQuery } from "@/features/positions/utils/list-filters";
+import type { PositionQueryInput } from "@hr-management/validation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
@@ -9,16 +13,31 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
 
 interface DepartmentPositionsPageProps {
+  searchParams: Promise<ListSearchParams>;
   params: Promise<{ departmentId: string }>;
 }
 
 export default async function DepartmentPositionsPage({
   params,
+  searchParams,
 }: DepartmentPositionsPageProps) {
   const { departmentId } = await params;
-  const [departmentResponse, positionsResponse] =
-    await loadDepartmentPositions(departmentId);
+  const raw = await searchParams;
+  const query = normalizePositionQuery(raw);
+  normalizeListUrl(
+    "/departments/" + encodeURIComponent(departmentId) + "/positions",
+    raw,
+    query,
+  );
+  const [departmentResponse, positionsResponse] = await loadDepartmentPositions(
+    departmentId,
+    query,
+  );
   const department = departmentResponse.data;
+  const noMatchingResults =
+    Object.values(query).some(Boolean) &&
+    positionsResponse.data.length === 0 &&
+    (await getDepartmentPositions(departmentId)).data.length > 0;
 
   return (
     <div className="space-y-7">
@@ -46,16 +65,21 @@ export default async function DepartmentPositionsPage({
       <PositionManagement
         department={department}
         positions={positionsResponse.data}
+        query={query}
+        noMatchingResults={noMatchingResults}
       />
     </div>
   );
 }
 
-async function loadDepartmentPositions(departmentId: string) {
+async function loadDepartmentPositions(
+  departmentId: string,
+  query: PositionQueryInput,
+) {
   try {
     return await Promise.all([
       getDepartment(departmentId),
-      getDepartmentPositions(departmentId),
+      getDepartmentPositions(departmentId, query),
     ]);
   } catch (error) {
     if (error instanceof RequestError && error.statusCode === 404) {

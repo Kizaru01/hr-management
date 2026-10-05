@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { rejectLeaveSchema } from "@hr-management/validation";
 import { ApiError } from "@/lib/api/api.client";
@@ -25,6 +27,8 @@ export const RejectLeaveDialog = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [remarksError, setRemarksError] = useState<string | null>(null);
+
+  const validationFormRef = useValidationFocus({ remarks: remarksError ? [remarksError] : undefined });
 
   if (!leaveRequest) {
     return null;
@@ -60,8 +64,13 @@ export const RejectLeaveDialog = ({
 
     setIsSubmitting(true);
 
+    let mutationConfirmed = false;
     try {
-      const response = await rejectLeave(leaveRequest.id, result.data);
+      const response = await actionFeedback(() => rejectLeave(leaveRequest.id, result.data), {
+        success: "Leave request rejected.",
+        error: "Unable to reject leave. Please try again.",
+      });
+      mutationConfirmed = true;
 
       setRemarks("");
       setErrorMessage(null);
@@ -69,6 +78,7 @@ export const RejectLeaveDialog = ({
       onClose();
       onSuccess(response.message);
     } catch (error) {
+      if (mutationConfirmed) return;
       setErrorMessage(
         error instanceof ApiError
           ? error.message
@@ -91,7 +101,7 @@ export const RejectLeaveDialog = ({
       description={`Add rejection remarks for ${formatLeaveEmployeeName(leaveRequest.employee)}.`}
       onRequestClose={resetAndClose}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form ref={validationFormRef} onSubmit={handleSubmit} className="space-y-4">
         <label className="grid gap-1" htmlFor="rejection-remarks">
           <span className="control-label">Remarks</span>
           <Textarea

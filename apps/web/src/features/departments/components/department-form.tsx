@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createDepartmentSchema } from "@hr-management/validation";
@@ -29,6 +31,7 @@ export function DepartmentForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const validationFormRef = useValidationFocus(fieldErrors);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -66,15 +69,24 @@ export function DepartmentForm({
 
     setIsSubmitting(true);
 
+    let mutationConfirmed = false;
     try {
       const response =
         mode === "create"
-          ? await createDepartment(result.data)
-          : await updateDepartment(department!.id, result.data);
+          ? await actionFeedback(() => createDepartment(result.data), {
+        success: "Department created.",
+        error: "Unable to create department. Please try again.",
+      })
+          : await actionFeedback(() => updateDepartment(department!.id, result.data), {
+        success: "Department updated.",
+        error: "Unable to update department. Please try again.",
+      });
+      mutationConfirmed = true;
 
       router.refresh();
       onSuccess(response.message);
     } catch (error) {
+      if (mutationConfirmed) return;
       const backendFieldErrors =
         error instanceof ApiError && error.details ? error.details : {};
 
@@ -92,7 +104,7 @@ export function DepartmentForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-5">
+    <form ref={validationFormRef} onSubmit={handleSubmit} className="grid gap-5">
       <FormField
         id={`${mode}-department-code`}
         name="code"

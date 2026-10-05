@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError } from "@/lib/api/api.client";
@@ -47,12 +49,18 @@ export const ShiftList = ({ shifts, onEdit }: ShiftListProps) => {
     setPendingDeactivateId(shift.id);
     setFeedback(null);
 
+    let mutationConfirmed = false;
     try {
-      const response = await deactivateShift(shift.id);
+      await actionFeedback(() => deactivateShift(shift.id), {
+        success: "Shift deactivated.",
+        error: "Unable to deactivate shift. Please try again.",
+      });
+      mutationConfirmed = true;
 
-      setFeedback({ type: "success", message: response.message });
+      setFeedback(null);
       router.refresh();
     } catch (error) {
+      if (mutationConfirmed) return;
       setFeedback({
         type: "error",
         message:

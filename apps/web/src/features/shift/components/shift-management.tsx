@@ -32,8 +32,8 @@ export function ShiftManagement({
   const sheet = useSheetController<ShiftSheetContent>();
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
-  const handleMutationSuccess = (message: string) => {
-    setFeedback({ type: "success", message });
+  const handleMutationSuccess = () => {
+    setFeedback(null);
     sheet.requestClose();
   };
 

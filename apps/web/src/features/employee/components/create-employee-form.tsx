@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { useEffect, useState } from "react";
 import {
   createEmployeeSchema,
@@ -51,6 +53,7 @@ export function CreateEmployeeForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const validationFormRef = useValidationFocus(fieldErrors);
 
   useEffect(() => {
     if (!departmentId) {
@@ -142,8 +145,15 @@ export function CreateEmployeeForm({
 
     setIsSubmitting(true);
 
+    let mutationConfirmed = false;
     try {
-      const response = await createEmployee(result.data);
+      const response = await actionFeedback(() => createEmployee(result.data), {
+        success: "Employee created.",
+        loading: "Creating employee and sending invitation...",
+        partial: "Employee created, but the invitation was not sent. Use Resend invitation.",
+        error: "Unable to create employee. Please try again.",
+      });
+      mutationConfirmed = true;
 
       form.reset();
       setDepartmentId("");
@@ -152,6 +162,7 @@ export function CreateEmployeeForm({
       setIsLoadingPositions(false);
       onCreated(response.data, response.message);
     } catch (error) {
+      if (mutationConfirmed) return;
       const backendFieldErrors =
         error instanceof ApiError && error.details ? error.details : {};
 
@@ -172,7 +183,7 @@ export function CreateEmployeeForm({
     departments.length === 0 || branches.length === 0;
 
   return (
-    <form onSubmit={handleSubmit} className="flex min-h-full flex-col">
+    <form ref={validationFormRef} onSubmit={handleSubmit} className="flex min-h-full flex-col">
       <div className="grid flex-1 gap-6 px-5 py-5 sm:px-6">
         <fieldset disabled={isSubmitting} className="grid gap-4">
           <legend className="mb-3 text-sm font-semibold">

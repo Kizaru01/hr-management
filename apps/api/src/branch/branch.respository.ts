@@ -1,3 +1,4 @@
+import type { BranchQueryInput } from '@hr-management/validation';
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../generated/prisma/client.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -34,10 +35,22 @@ export type BranchRecord = Prisma.BranchGetPayload<{
 export class BranchRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(transaction?: Prisma.TransactionClient) {
+  findAll(
+    transaction?: Prisma.TransactionClient,
+    query: BranchQueryInput = {},
+  ) {
     const client = transaction ?? this.prisma;
 
     return client.branch.findMany({
+      where: {
+        ...(query.status && { isActive: query.status === 'active' }),
+        ...(query.q && {
+          OR: [
+            { name: { contains: query.q, mode: 'insensitive' } },
+            { code: { contains: query.q, mode: 'insensitive' } },
+          ],
+        }),
+      },
       select: branchRecordSelect,
       orderBy: [{ isActive: 'desc' }, { name: 'asc' }],
     });

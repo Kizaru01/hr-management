@@ -1,3 +1,4 @@
+import type { EmployeeQueryInput } from '@hr-management/validation';
 import { Injectable } from '@nestjs/common';
 import type {
   CreateEmployeeInput,
@@ -72,8 +73,27 @@ export class EmployeeRepository {
       },
     });
   }
-  findAll() {
+  findAll(query: EmployeeQueryInput = {}) {
     return this.prisma.employee.findMany({
+      where: {
+        departmentId: query.departmentId,
+        positionId: query.departmentId ? query.positionId : undefined,
+        branchId: query.branchId,
+        employmentStatus: query.employmentStatus,
+        ...(query.q && {
+          AND: query.q.split(/\s+/).map((term) => ({
+            OR: [
+              'firstName',
+              'middleName',
+              'lastName',
+              'email',
+              'employeeNumber',
+            ].map((field) => ({
+              [field]: { contains: term, mode: 'insensitive' as const },
+            })),
+          })),
+        }),
+      },
       include: {
         department: true,
         position: true,

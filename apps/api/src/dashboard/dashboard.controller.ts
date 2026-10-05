@@ -16,6 +16,6 @@ export class DashboardController {
   @Get('hr')
   @Roles('admin', 'hr')
   getHrDashboard(@CurrentUser() user: AuthenticatedUser) {
-    return this.dashboardService.getHrDashboard(user.id);
+    return this.dashboardService.getHrDashboard(user);
   }
 }

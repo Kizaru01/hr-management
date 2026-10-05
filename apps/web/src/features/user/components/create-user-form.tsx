@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUserSchema } from "@hr-management/validation";
@@ -22,14 +24,16 @@ const roleOptions: Array<{ value: UserRole; label: string }> = [
 
 interface CreateUserFormProps {
   onCancel?: () => void;
+  onSuccess?: () => void;
 }
 
-export function CreateUserForm({ onCancel }: CreateUserFormProps) {
+export function CreateUserForm({ onCancel, onSuccess }: CreateUserFormProps) {
   const router = useRouter();
   const [role, setRole] = useState<UserRole>("employee");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const validationFormRef = useValidationFocus(fieldErrors);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -60,20 +64,28 @@ export function CreateUserForm({ onCancel }: CreateUserFormProps) {
 
     setIsSubmitting(true);
 
+    let mutationConfirmed = false;
     try {
-      const response = await createUser({
+      const response = await actionFeedback(() => createUser({
         ...result.data,
         employeeNumber: result.data.employeeNumber || undefined,
+      }), {
+        success: "Account created.",
+        error: "Unable to create user. Please try again.",
+        loading: "Creating account and sending invitation...",
       });
+      mutationConfirmed = true;
 
       form.reset();
       setRole("employee");
-      setFeedback({
-        type: response.data.invitationSent ? "success" : "error",
-        message: response.message,
+      setFeedback(response.data.invitationSent ? null : {
+        type: "error",
+        message: "Account created, but the invitation was not sent. Use Resend invitation from the user list.",
       });
       router.refresh();
+      if (response.data.invitationSent) onSuccess?.();
     } catch (error) {
+      if (mutationConfirmed) return;
       const backendFieldErrors =
         error instanceof ApiError && error.details ? error.details : {};
 
@@ -93,7 +105,7 @@ export function CreateUserForm({ onCancel }: CreateUserFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4">
+    <form ref={validationFormRef} onSubmit={handleSubmit} className="grid gap-4">
       <label className="grid gap-1" htmlFor="user-email">
         <span className="text-sm font-medium">Email</span>
         <input

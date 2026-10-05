@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createPerformanceReviewSchema } from "@hr-management/validation";
@@ -49,6 +51,7 @@ export const CreatePerformanceReviewForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const validationFormRef = useValidationFocus(fieldErrors);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -81,14 +84,20 @@ export const CreatePerformanceReviewForm = ({
 
     setIsSubmitting(true);
 
+    let mutationConfirmed = false;
     try {
-      const response = await createPerformanceReview(employeeId, result.data);
+      await actionFeedback(() => createPerformanceReview(employeeId, result.data), {
+        success: "Performance review created.",
+        error: "Could not confirm the action. Please check the current record before trying again.",
+      });
+      mutationConfirmed = true;
 
       form.reset();
-      setFeedback({ type: "success", message: response.message });
+      setFeedback(null);
       // router.refresh();
       router.push(`/employees/${employeeId}`);
     } catch (error) {
+      if (mutationConfirmed) return;
       const backendFieldErrors =
         error instanceof ApiError && error.details ? error.details : {};
 
@@ -97,9 +106,9 @@ export const CreatePerformanceReviewForm = ({
         message:
           Object.keys(backendFieldErrors).length > 0
             ? "Please correct the highlighted fields."
-            : error instanceof ApiError
+            : error instanceof ApiError && error.status < 500
               ? error.message
-              : "Unable to create performance review.",
+              : "Could not confirm the result. Check the list before trying again; the record may have been saved.",
       });
       setFieldErrors(backendFieldErrors);
     } finally {
@@ -116,7 +125,7 @@ export const CreatePerformanceReviewForm = ({
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
+      <form ref={validationFormRef} onSubmit={handleSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1" htmlFor="performance-review-date">
           <span className="text-sm font-medium">Review Date</span>
           <input

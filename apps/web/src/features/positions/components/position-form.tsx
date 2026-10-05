@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -33,6 +35,7 @@ export function PositionForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const validationFormRef = useValidationFocus(fieldErrors);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -73,21 +76,30 @@ export function PositionForm({
 
     setIsSubmitting(true);
 
+    let mutationConfirmed = false;
     try {
       const createInput = result.data as CreatePositionInput;
       const response =
         mode === "create"
-          ? await createPosition(department.id, {
+          ? await actionFeedback(() => createPosition(department.id, {
               name: createInput.name,
               description: createInput.description,
               salary: createInput.salary,
               allowance: createInput.allowance,
-            })
-          : await updatePosition(position!.id, result.data);
+            }), {
+        success: "Position created.",
+        error: "Unable to create position. Please try again.",
+      })
+          : await actionFeedback(() => updatePosition(position!.id, result.data), {
+        success: "Position updated.",
+        error: "Unable to update position. Please try again.",
+      });
+      mutationConfirmed = true;
 
       router.refresh();
       onSuccess(response.message);
     } catch (error) {
+      if (mutationConfirmed) return;
       const backendFieldErrors =
         error instanceof ApiError && error.details ? error.details : {};
 
@@ -105,7 +117,7 @@ export function PositionForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-5">
+    <form ref={validationFormRef} onSubmit={handleSubmit} className="grid gap-5">
       <div className="rounded-md border border-border bg-hover px-4 py-3">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Department

@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { createBranchSchema } from "@hr-management/validation";
 import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -31,6 +33,7 @@ export function BranchForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const validationFormRef = useValidationFocus(fieldErrors);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -68,15 +71,24 @@ export function BranchForm({
 
     setIsSubmitting(true);
 
+    let mutationConfirmed = false;
     try {
       const response =
         mode === "create"
-          ? await createBranch(result.data)
-          : await updateBranch(branch!.id, result.data);
+          ? await actionFeedback(() => createBranch(result.data), {
+        success: "Branch created.",
+        error: "Unable to create branch. Please try again.",
+      })
+          : await actionFeedback(() => updateBranch(branch!.id, result.data), {
+        success: "Branch updated.",
+        error: "Unable to update branch. Please try again.",
+      });
+      mutationConfirmed = true;
 
       router.refresh();
       onSuccess(response.message);
     } catch (error) {
+      if (mutationConfirmed) return;
       const backendFieldErrors =
         error instanceof ApiError && error.details ? error.details : {};
 
@@ -94,7 +106,7 @@ export function BranchForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-5">
+    <form ref={validationFormRef} onSubmit={handleSubmit} className="grid gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <BranchField
           id={`${mode}-branch-code`}

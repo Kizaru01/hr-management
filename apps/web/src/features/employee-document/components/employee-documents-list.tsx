@@ -1,5 +1,8 @@
 "use client";
 
+import { actionFeedback } from "@/lib/action-feedback";
+
+import { DownloadDocumentButton } from "./download-document-button";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -86,12 +89,18 @@ export const EmployeeDocumentsList = ({
     setPendingDocumentId(document.id);
     setFeedback(null);
 
+    let mutationConfirmed = false;
     try {
-      const response = await deactivateEmployeeDocument(document.id);
+      await actionFeedback(() => deactivateEmployeeDocument(document.id), {
+        success: "Document deactivated.",
+        error: "Unable to deactivate employee document. Please try again.",
+      });
+      mutationConfirmed = true;
 
-      setFeedback({ type: "success", message: response.message });
+      setFeedback(null);
       router.refresh();
     } catch (error) {
+      if (mutationConfirmed) return;
       setFeedback({
         type: "error",
         message:
@@ -298,13 +307,7 @@ const DocumentActions = ({
   onDeactivate: (document: EmployeeDocument) => void;
 }) => (
   <>
-    <a
-      href={`/api/employee-documents/${encodeURIComponent(downloadDocumentId)}/download`}
-      download
-      className="rounded-md border border-border-strong px-3 py-1.5 font-medium hover:bg-hover"
-    >
-      Download
-    </a>
+    <DownloadDocumentButton documentId={downloadDocumentId} />
     {canDeactivate ? (
       <button
         type="button"

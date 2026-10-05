@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -42,13 +44,16 @@ export const EmployeeEditForm = ({
   const [positionId, setPositionId] = useState(employee.position.id);
   const [errorMessage, setErrorMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const validationFormRef = useValidationFocus(fieldErrors);
+  const [positionLoadError, setPositionLoadError] = useState("");
+  const [positionRequestVersion, setPositionRequestVersion] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadPositions = async () => {
-      setErrorMessage("");
+      setPositionLoadError("");
       setFieldErrors({});
 
       try {
@@ -97,7 +102,7 @@ export const EmployeeEditForm = ({
     return () => {
       cancelled = true;
     };
-  }, [departmentId, employee.department.id, employee.position.id]);
+  }, [departmentId, employee.department.id, employee.position.id, positionRequestVersion]);
 
   const handleDepartmentChange = (
     event: React.ChangeEvent<HTMLSelectElement>,
@@ -109,10 +114,12 @@ export const EmployeeEditForm = ({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSaving) return;
     setErrorMessage("");
     setFieldErrors({});
     setIsSaving(true);
 
+    let mutationConfirmed = false;
     try {
       const formData = new FormData(event.currentTarget);
       const selectedEmploymentType = String(formData.get("employmentType"));
@@ -121,10 +128,11 @@ export const EmployeeEditForm = ({
       )?.value;
 
       if (!employmentType) {
-        throw new Error("Invalid employment type.");
+        setFieldErrors({ employmentType: ["Select a valid employment type."] });
+        return;
       }
 
-      await updateEmployee(employee.id, {
+      await actionFeedback(() => updateEmployee(employee.id, {
         firstName: String(formData.get("firstName")),
         middleName: String(formData.get("middleName")),
         lastName: String(formData.get("lastName")),
@@ -133,11 +141,16 @@ export const EmployeeEditForm = ({
         positionId,
         branchId: String(formData.get("branchId")),
         employmentType,
+      }), {
+        success: "Employee updated.",
+        error: "Unable to update employee. Please try again.",
       });
+      mutationConfirmed = true;
 
       router.push(`/employees/${employee.id}`);
       router.refresh();
     } catch (error) {
+      if (mutationConfirmed) return;
       setErrorMessage(
         error instanceof ApiError
           ? error.message
@@ -152,31 +165,39 @@ export const EmployeeEditForm = ({
   };
 
   return (
-    <form
+    <form ref={validationFormRef}
       onSubmit={handleSubmit}
       className="grid gap-4 rounded-card border border-border bg-surface p-4 shadow-card sm:grid-cols-2"
     >
       <FormField
         label="First name"
         name="firstName"
+        error={fieldErrors.firstName?.[0]}
+        disabled={isSaving}
         defaultValue={employee.firstName}
       />
 
       <FormField
         label="Middle name"
         name="middleName"
+        error={fieldErrors.middleName?.[0]}
+        disabled={isSaving}
         defaultValue={employee.middleName}
       />
 
       <FormField
         label="Last name"
         name="lastName"
+        error={fieldErrors.lastName?.[0]}
+        disabled={isSaving}
         defaultValue={employee.lastName}
       />
 
       <FormField
         label="Email"
         name="email"
+        error={fieldErrors.email?.[0]}
+        disabled={isSaving}
         type="email"
         defaultValue={employee.email}
       />
@@ -184,6 +205,8 @@ export const EmployeeEditForm = ({
       <SelectField
         label="Department"
         name="departmentId"
+        error={fieldErrors.departmentId?.[0]}
+        disabled={isSaving}
         value={departmentId}
         options={departments}
         onChange={handleDepartmentChange}
@@ -192,6 +215,8 @@ export const EmployeeEditForm = ({
       <SelectField
         label="Position"
         name="positionId"
+        error={fieldErrors.positionId?.[0]}
+        disabled={isSaving}
         value={positionId}
         options={positions}
         onChange={(event) => setPositionId(event.target.value)}
@@ -200,6 +225,8 @@ export const EmployeeEditForm = ({
       <SelectField
         label="Branch"
         name="branchId"
+        error={fieldErrors.branchId?.[0]}
+        disabled={isSaving}
         defaultValue={employee.branch?.id}
         options={branches}
       />
@@ -207,10 +234,16 @@ export const EmployeeEditForm = ({
       <SelectField
         label="Employment type"
         name="employmentType"
+        error={fieldErrors.employmentType?.[0]}
+        disabled={isSaving}
         defaultValue={employee.employmentType}
         options={employmentTypeOptions}
       />
 
+      {positionLoadError ? <div role="alert" className="sm:col-span-2 text-sm text-destructive">
+        <p>{positionLoadError}</p>
+        <button type="button" onClick={() => setPositionRequestVersion(value => value + 1)} className="mt-2 underline">Retry loading positions</button>
+      </div> : null}
       {errorMessage && (
         <div
           role="alert"
@@ -218,17 +251,6 @@ export const EmployeeEditForm = ({
         >
           <p>{errorMessage}</p>
 
-          {Object.entries(fieldErrors).length > 0 && (
-            <ul className="list-disc pl-5">
-              {Object.entries(fieldErrors).flatMap(([field, messages]) =>
-                messages.map((message) => (
-                  <li key={`${field}-${message}`}>
-                    {field}: {message}
-                  </li>
-                )),
-              )}
-            </ul>
-          )}
         </div>
       )}
 

@@ -1,3 +1,4 @@
+import type { DepartmentQueryInput } from '@hr-management/validation';
 import type {
   CreateDepartmentInput,
   UpdateDepartmentInput,
@@ -24,8 +25,10 @@ export class DepartmentService {
     private readonly auditLogService: AuditLogService,
   ) {}
 
-  async findAll() {
-    const departments = await this.departmentRepository.findAll();
+  async findAll(query?: DepartmentQueryInput) {
+    const departments = await (query
+      ? this.departmentRepository.findAll(undefined, query)
+      : this.departmentRepository.findAll());
 
     return successResponse(
       departments.map(mapDepartment),

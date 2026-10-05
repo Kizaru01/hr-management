@@ -77,7 +77,7 @@ export function AnnouncementManagement({
           <CreateAnnouncementForm
             departments={departments}
             branches={branches}
-            onCancel={sheet.requestClose}
+            onCancel={sheet.requestClose} onSuccess={sheet.requestClose}
           />
         ) : selectedAnnouncement ? (
           <AnnouncementDetails announcement={selectedAnnouncement} />
