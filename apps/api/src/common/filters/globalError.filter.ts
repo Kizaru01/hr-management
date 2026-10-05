@@ -4,14 +4,24 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {
+  private readonly logger = new Logger(GlobalErrorFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const context = host.switchToHttp();
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const response = context.getResponse();
+
+    if (!(exception instanceof HttpException)) {
+      // Raw errors and request URLs can contain credentials or document data.
+      this.logger.error(
+        'Unhandled API exception; inspect service stage diagnostics.',
+      );
+    }
 
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error.';

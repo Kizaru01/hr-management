@@ -1,6 +1,8 @@
 import { Select } from "@/components/ui/form-controls";
 
 interface SelectFieldProps {
+  error?: string;
+  disabled?: boolean;
   label: string;
   name: string;
   value?: string;
@@ -13,6 +15,8 @@ interface SelectFieldProps {
 }
 
 export const SelectField = ({
+  error,
+  disabled,
   label,
   name,
   value,
@@ -24,6 +28,9 @@ export const SelectField = ({
     <span className="control-label">{label}</span>
 
     <Select
+      disabled={disabled}
+      aria-invalid={Boolean(error)}
+      aria-describedby={error ? `${name}-error` : undefined}
       name={name}
       value={value}
       defaultValue={value ? undefined : (defaultValue ?? undefined)}
@@ -35,5 +42,6 @@ export const SelectField = ({
         </option>
       ))}
     </Select>
+    {error ? <p id={`${name}-error`} className="text-sm text-destructive">{error}</p> : null}
   </label>
 );

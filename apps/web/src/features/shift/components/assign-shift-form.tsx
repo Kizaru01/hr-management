@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { assignShiftSchema } from "@hr-management/validation";
@@ -41,6 +43,7 @@ export const AssignShiftForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const validationFormRef = useValidationFocus(fieldErrors);
   const hasActiveShifts = shifts.length > 0;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -74,14 +77,20 @@ export const AssignShiftForm = ({
 
     setIsSubmitting(true);
 
+    let mutationConfirmed = false;
     try {
-      const response = await assignShift(employeeId, result.data);
+      await actionFeedback(() => assignShift(employeeId, result.data), {
+        success: "Shift assigned.",
+        error: "Unable to assign shift. Please try again.",
+      });
+      mutationConfirmed = true;
 
       form.reset();
       setEffectiveFrom("");
-      setFeedback({ type: "success", message: response.message });
+      setFeedback(null);
       router.push(`/employees/${employeeId}`);
     } catch (error) {
+      if (mutationConfirmed) return;
       const backendFieldErrors =
         error instanceof ApiError && error.details ? error.details : {};
 
@@ -109,7 +118,7 @@ export const AssignShiftForm = ({
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-5 grid gap-4">
+      <form ref={validationFormRef} onSubmit={handleSubmit} className="mt-5 grid gap-4">
         <label className="grid gap-1" htmlFor="employee-shift-id">
           <span className="text-sm font-medium">Shift</span>
           <select

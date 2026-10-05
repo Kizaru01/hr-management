@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -37,6 +39,7 @@ export const ShiftForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const validationFormRef = useValidationFocus(fieldErrors);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -87,11 +90,19 @@ export const ShiftForm = ({
 
     setIsSubmitting(true);
 
+    let mutationConfirmed = false;
     try {
       const response =
         validation.mode === "create"
-          ? await createShift(validation.result.data)
-          : await updateShift(shift!.id, validation.result.data);
+          ? await actionFeedback(() => createShift(validation.result.data!), {
+        success: "Shift created.",
+        error: "Unable to create shift. Please try again.",
+      })
+          : await actionFeedback(() => updateShift(shift!.id, validation.result.data!), {
+        success: "Shift updated.",
+        error: "Unable to update shift. Please try again.",
+      });
+      mutationConfirmed = true;
 
       if (mode === "create") {
         form.reset();
@@ -101,9 +112,10 @@ export const ShiftForm = ({
       if (onSuccess) {
         onSuccess(response.message);
       } else {
-        setFeedback({ type: "success", message: response.message });
+        setFeedback(null);
       }
     } catch (error) {
+      if (mutationConfirmed) return;
       const backendFieldErrors =
         error instanceof ApiError && error.details ? error.details : {};
 
@@ -123,7 +135,7 @@ export const ShiftForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-5">
+    <form ref={validationFormRef} onSubmit={handleSubmit} className="grid gap-5">
       <label className="grid gap-1" htmlFor={`${mode}-shift-name`}>
         <span className="text-sm font-medium">Name</span>
         <Input

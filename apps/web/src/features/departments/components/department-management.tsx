@@ -54,8 +54,8 @@ export function DepartmentManagement({
     selectedDepartment?.id,
   );
 
-  const handleMutationSuccess = (message: string) => {
-    setFeedback({ type: "success", message });
+  const handleMutationSuccess = () => {
+    setFeedback(null);
     sheet.requestClose();
   };
 

@@ -15,6 +15,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [message, setMessage] = useState<{
     tone: "success" | "error";
     text: string;
@@ -26,6 +27,7 @@ export default function LoginPage() {
 
     setIsLoading(true);
     setMessage(null);
+    setFieldErrors({});
 
     try {
       const response = await login({
@@ -47,6 +49,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       if (error instanceof ApiError) {
+        setFieldErrors(error.details ?? {});
         setMessage({ tone: "error", text: error.message });
       } else {
         setMessage({ tone: "error", text: "Something went wrong." });
@@ -78,6 +81,9 @@ export default function LoginPage() {
 
               <Input
                 id="email"
+                name="email"
+                aria-invalid={!!fieldErrors.email?.length}
+                aria-describedby={fieldErrors.email?.length ? "email-error" : undefined}
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
@@ -85,6 +91,9 @@ export default function LoginPage() {
                 autoComplete="email"
                 required
               />
+              {fieldErrors.email?.length ? (
+                <p id="email-error" role="alert" className="mt-1 text-sm text-destructive">{fieldErrors.email.join(" ")}</p>
+              ) : null}
             </div>
 
             <div>
@@ -94,6 +103,9 @@ export default function LoginPage() {
 
               <Input
                 id="password"
+                name="password"
+                aria-invalid={!!fieldErrors.password?.length}
+                aria-describedby={fieldErrors.password?.length ? "password-error" : undefined}
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -101,6 +113,9 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 required
               />
+              {fieldErrors.password?.length ? (
+                <p id="password-error" role="alert" className="mt-1 text-sm text-destructive">{fieldErrors.password.join(" ")}</p>
+              ) : null}
             </div>
 
             <Button type="submit" disabled={isLoading} className="w-full">

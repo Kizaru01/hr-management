@@ -1,8 +1,9 @@
 "use client";
 
+import { actionFeedback } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ApiError } from "@/lib/api/api.client";
 import { Button } from "@/components/ui/button";
 import { removeShiftAssignment } from "../api/remove-shift-assignment";
 import type { EmployeeShiftAssignment } from "../types/shift";
@@ -46,15 +47,17 @@ export const EmployeeShiftHistory = ({
 
     setPendingAssignmentId(assignment.id);
 
+    let mutationConfirmed = false;
     try {
-      await removeShiftAssignment(employeeId, assignment.id);
+      await actionFeedback(() => removeShiftAssignment(employeeId, assignment.id), {
+        success: "Shift assignment removed.",
+        error: "Unable to remove shift assignment. Please try again.",
+      });
+      mutationConfirmed = true;
       router.refresh();
-    } catch (error) {
-      window.alert(
-        error instanceof ApiError
-          ? error.message
-          : "Unable to remove shift assignment.",
-      );
+    } catch {
+      if (mutationConfirmed) return;
+      // The action toast reports request failure; keep the schedule unchanged.
     } finally {
       setPendingAssignmentId(null);
     }

@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError } from "@/lib/api/api.client";
@@ -43,12 +45,18 @@ export function PositionDetails({
     setIsChangingStatus(true);
     setErrorMessage(null);
 
+    let mutationConfirmed = false;
     try {
-      const response = await changePositionStatus(position.id, action);
+      const response = await actionFeedback(() => changePositionStatus(position.id, action), {
+        success: "Position status updated.",
+        error: "Unable to change position status. Please try again.",
+      });
+      mutationConfirmed = true;
 
       router.refresh();
       onMutationSuccess(response.message);
     } catch (error) {
+      if (mutationConfirmed) return;
       setErrorMessage(
         error instanceof ApiError
           ? error.message

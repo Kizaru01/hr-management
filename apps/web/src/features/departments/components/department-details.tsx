@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback } from "@/lib/action-feedback";
+
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -47,12 +49,18 @@ export function DepartmentDetails({
     setIsChangingStatus(true);
     setErrorMessage(null);
 
+    let mutationConfirmed = false;
     try {
-      const response = await changeDepartmentStatus(department.id, action);
+      const response = await actionFeedback(() => changeDepartmentStatus(department.id, action), {
+        success: "Department status updated.",
+        error: "Unable to change department status. Please try again.",
+      });
+      mutationConfirmed = true;
 
       router.refresh();
       onMutationSuccess(response.message);
     } catch (error) {
+      if (mutationConfirmed) return;
       setErrorMessage(
         error instanceof ApiError
           ? error.message

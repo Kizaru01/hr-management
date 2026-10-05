@@ -8,6 +8,7 @@ import {
   employeeQueryKeys,
 } from "../utils/list-filters";
 
+import { safeMessage } from "@/lib/api/safe-message";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -75,9 +76,9 @@ export function EmployeeManagement({
       />
 
       {createdEmployee ? (
-        <Feedback tone={createdEmployee.invitationSent ? "success" : "warning"}>
+        <Feedback tone={createdEmployee.invitationSent ? "info" : "warning"}>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span>{createdEmployee.message}</span>
+            <span>{createdEmployee.invitationSent ? "Continue setting up the employee’s record." : safeMessage(createdEmployee.message, "Employee created, but the invitation was not sent.")}</span>
             <Link
               href={`/employees/${encodeURIComponent(createdEmployee.id)}`}
               className={buttonStyles({

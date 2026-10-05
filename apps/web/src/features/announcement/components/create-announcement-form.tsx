@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createAnnouncementSchema } from "@hr-management/validation";
@@ -13,6 +15,7 @@ interface CreateAnnouncementFormProps {
   departments: LookupOption[];
   branches: LookupOption[];
   onCancel?: () => void;
+  onSuccess?: () => void;
 }
 
 type Feedback = {
@@ -41,6 +44,7 @@ export const CreateAnnouncementForm = ({
   departments,
   branches,
   onCancel,
+  onSuccess,
 }: CreateAnnouncementFormProps) => {
   const router = useRouter();
   const [audience, setAudience] = useState<AnnouncementAudience>("company");
@@ -49,6 +53,7 @@ export const CreateAnnouncementForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const validationFormRef = useValidationFocus(fieldErrors);
 
   const handleAudienceChange = (
     event: React.ChangeEvent<HTMLSelectElement>,
@@ -93,22 +98,30 @@ export const CreateAnnouncementForm = ({
 
     setIsSubmitting(true);
 
+    let mutationConfirmed = false;
     try {
-      const response = await createAnnouncement(result.data);
+      await actionFeedback(() => createAnnouncement(result.data), {
+        success: "Announcement published.",
+        error: "Could not confirm the action. Please check the current record before trying again.",
+        loading: "Publishing announcement...",
+      });
+      mutationConfirmed = true;
 
       form.reset();
       setAudience("company");
       setDepartmentId("");
       setBranchId("");
-      setFeedback({ type: "success", message: response.message });
+      setFeedback(null);
       router.refresh();
+      onSuccess?.();
     } catch (error) {
+      if (mutationConfirmed) return;
       setFeedback({
         type: "error",
         message:
-          error instanceof ApiError
+          error instanceof ApiError && error.status < 500
             ? error.message
-            : "Unable to create announcement.",
+            : "Could not confirm the result. Check the list before trying again; the record may have been saved.",
       });
       setFieldErrors(
         error instanceof ApiError && error.details ? error.details : {},
@@ -119,7 +132,7 @@ export const CreateAnnouncementForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
+    <form ref={validationFormRef} onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
       <label className="grid gap-1 sm:col-span-2" htmlFor="announcement-title">
         <span className="text-sm font-medium">Title</span>
         <input

@@ -113,8 +113,10 @@ export class AnnouncementsRepository {
     now: Date,
     departmentId: string,
     branchId: string | null,
+    limit?: number,
   ) {
     return this.prisma.announcement.findMany({
+      take: limit,
       where: {
         isActive: true,
 

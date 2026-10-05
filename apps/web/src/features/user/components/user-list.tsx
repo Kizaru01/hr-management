@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight } from "lucide-react";
@@ -87,16 +89,22 @@ export function UserList({
     setPendingOperation(operation);
     setFeedback(null);
 
+    let mutationConfirmed = false;
     try {
-      const response = await updateUserRole(user.id, { role: nextRole });
+      const response = await actionFeedback(() => updateUserRole(user.id, { role: nextRole }), {
+        success: "User role updated.",
+        error: "Unable to update user role. Please try again.",
+      });
+      mutationConfirmed = true;
 
       setDraftRoles((current) => ({
         ...current,
         [user.id]: response.data.role,
       }));
-      setFeedback({ type: "success", message: response.message });
+      setFeedback(null);
       router.refresh();
     } catch (error) {
+      if (mutationConfirmed) return;
       setFeedback({
         type: "error",
         message:
@@ -131,15 +139,23 @@ export function UserList({
     setPendingOperation(operation);
     setFeedback(null);
 
+    let mutationConfirmed1 = false;
     try {
-      const response =
-        action === "activate"
-          ? await activateUserAccess(user.id)
-          : await deactivateUserAccess(user.id);
+      action === "activate"
+          ? await actionFeedback(() => activateUserAccess(user.id), {
+        success: "User access activated.",
+        error: "Unable to activate user access. Please try again.",
+      })
+          : await actionFeedback(() => deactivateUserAccess(user.id), {
+        success: "User access deactivated.",
+        error: "Unable to deactivate user access. Please try again.",
+      });
+      mutationConfirmed1 = true;
 
-      setFeedback({ type: "success", message: response.message });
+      setFeedback(null);
       router.refresh();
     } catch (error) {
+      if (mutationConfirmed1) return;
       setFeedback({
         type: "error",
         message:

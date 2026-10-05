@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback, useValidationFocus } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createEmployeeDocumentSchema } from "@hr-management/validation";
@@ -46,6 +48,7 @@ export const UploadEmployeeDocumentForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const validationFormRef = useValidationFocus(fieldErrors);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -90,17 +93,24 @@ export const UploadEmployeeDocumentForm = ({
 
     setIsSubmitting(true);
 
+    let mutationConfirmed = false;
     try {
-      const response = await uploadEmployeeDocument(
+      await actionFeedback(() => uploadEmployeeDocument(
         employeeId,
         file,
         result.data,
-      );
+      ), {
+        success: "Document uploaded.",
+        error: "Unable to upload employee document. Please try again.",
+        loading: "Uploading document...",
+      });
+      mutationConfirmed = true;
 
       form.reset();
-      setFeedback({ type: "success", message: response.message });
-      router.refresh();
+      setFeedback(null);
+      router.push(`/employees/${encodeURIComponent(employeeId)}`);
     } catch (error) {
+      if (mutationConfirmed) return;
       setFeedback({
         type: "error",
         message:
@@ -125,7 +135,7 @@ export const UploadEmployeeDocumentForm = ({
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
+      <form ref={validationFormRef} onSubmit={handleSubmit} className="mt-6 grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1 sm:col-span-2" htmlFor="document-file">
           <span className="text-sm font-medium">File</span>
           <input

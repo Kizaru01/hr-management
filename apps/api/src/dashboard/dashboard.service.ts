@@ -1,93 +1,98 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { successResponse } from '../common/responses/success-response';
 import { EmployeeRepository } from '../employee/employee.repository';
 import { AttendanceService } from '../attendance/attendance.service';
 import { getWorkDate } from '../attendance/attendance-date';
 import { AnnouncementsRepository } from '../announcements/announcements.repository';
+import { mapActiveAnnouncement } from '../announcements/announcement.mapper';
 import { LeaveRepository } from '../leave/leave.repository';
-import { NotificationRepository } from '../notification/notification.repository';
+import type { AuthenticatedUser } from '../auth/types/user.type';
+import { DashboardRepository } from './dashboard.repository';
+import type { HrDashboardData } from './dashboard.types';
 
 @Injectable()
 export class DashboardService {
+  private readonly logger = new Logger(DashboardService.name);
+
   constructor(
     private readonly employeeRepository: EmployeeRepository,
     private readonly attendanceService: AttendanceService,
     private readonly leaveRepository: LeaveRepository,
     private readonly announcementsRepository: AnnouncementsRepository,
-    private readonly notificationRepository: NotificationRepository,
+    private readonly dashboardRepository: DashboardRepository,
   ) {}
 
-  async getHrDashboard(currentUserId: string) {
+  async getHrDashboard(user: AuthenticatedUser) {
     const workDate = getWorkDate();
     const date = workDate.toISOString().slice(0, 10);
-    const now = new Date();
-
+    // Date-only values: today plus the next 29 days, inclusive.
+    const through = new Date(workDate);
+    through.setUTCDate(through.getUTCDate() + 29);
+    const canManageAccounts = user.role === 'admin';
     const [
-      totalEmployees,
-      activeEmployees,
-      inactiveEmployees,
+      employees,
       attendanceToday,
-      unreadNotifications,
-      recentLeaveRequests,
-      pendingLeaveRequests,
-      recentAnnouncements,
-      activeAnnouncements,
+      pending,
+      documents,
+      activations,
+      announcements,
     ] = await Promise.all([
-      this.employeeRepository.countAll(),
-      this.employeeRepository.countByEmploymentStatus('active'),
-      this.employeeRepository.countByEmploymentStatus('inactive'),
-
-      this.attendanceService.buildCompanyDailyAttendance(date),
-      this.notificationRepository.countUnreadByUserId(currentUserId),
-
-      this.leaveRepository.findRecent(5),
-      this.leaveRepository.countPending(),
-
-      this.announcementsRepository.findRecent(5),
-      this.announcementsRepository.countActive(now),
+      this.section('employees', () =>
+        this.dashboardRepository.employeeCounts(),
+      ),
+      this.section('attendance', () =>
+        this.attendanceService.buildCompanyDailyAttendance(date),
+      ),
+      this.section('leave', () => this.leaveRepository.countPending()),
+      this.section('documents', () =>
+        this.dashboardRepository.countExpiringDocuments(workDate, through),
+      ),
+      canManageAccounts
+        ? this.section('activations', () =>
+            this.dashboardRepository.countPendingEmployeeAccounts(),
+          )
+        : Promise.resolve(null),
+      this.section('announcements', async () => {
+        const employee = await this.employeeRepository.findByUserId(user.id);
+        if (!employee)
+          throw new NotFoundException('Employee profile not found.');
+        const records =
+          await this.announcementsRepository.findVisibleForEmployee(
+            new Date(),
+            employee.departmentId,
+            employee.branchId,
+            3,
+          );
+        return records.map(mapActiveAnnouncement);
+      }),
     ]);
-    const recentLeaves = recentLeaveRequests.map((leave) => ({
-      id: leave.id,
-      leaveType: leave.leaveType,
-      startDate: leave.startDate,
-      endDate: leave.endDate,
-      status: leave.status,
-      createdAt: leave.createdAt,
 
-      employee: {
-        id: leave.employee.id,
-        employeeNumber: leave.employee.employeeNumber,
-        name: [
-          leave.employee.firstName,
-          leave.employee.middleName,
-          leave.employee.lastName,
-        ]
-          .filter(Boolean)
-          .join(' '),
+    const data: HrDashboardData = {
+      date,
+      employees,
+      attendanceToday,
+      leaveRequests: { pending },
+      documents: {
+        expiring: documents,
+        from: date,
+        through: through.toISOString().slice(0, 10),
+        days: 30,
       },
-    }));
+      activations: { authorized: canManageAccounts, pending: activations },
+      announcements,
+    };
+    return successResponse(data, 'HR dashboard retrieved successfully.');
+  }
 
-    return successResponse(
-      {
-        employees: {
-          total: totalEmployees,
-          active: activeEmployees,
-          inactive: inactiveEmployees,
-        },
-        attendanceToday,
-        leaveRequests: {
-          pending: pendingLeaveRequests,
-          recent: recentLeaves,
-        },
-        announcements: {
-          active: activeAnnouncements,
-          recent: recentAnnouncements,
-        },
-        notifications: {
-          unread: unreadNotifications,
-        },
-      },
-      'HR dashboard retrieved successfully.',
-    );
+  private async section<T>(
+    name: string,
+    read: () => Promise<T>,
+  ): Promise<T | null> {
+    try {
+      return await read();
+    } catch {
+      this.logger.warn(`Dashboard section unavailable: ${name}`);
+      return null;
+    }
   }
 }

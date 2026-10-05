@@ -1,4 +1,5 @@
 import type { ErrorResponse } from "@/types/error-response";
+import { safeMessage } from "./safe-message";
 
 type ApiRequestOptions = RequestInit & {
   fallbackMessage?: string;
@@ -33,13 +34,28 @@ const parseApiResponse = async <T>(
     const errorResponse = isErrorResponse(data) ? data : undefined;
 
     throw new ApiError(
-      errorResponse?.error.message ?? fallbackMessage,
+      response.status >= 500
+        ? fallbackMessage
+        : safeMessage(errorResponse?.error.message, fallbackMessage),
       response.status,
       data,
-      errorResponse?.error.details,
+      response.status < 500 && errorResponse?.error.details
+        ? Object.fromEntries(
+            Object.entries(errorResponse.error.details).map(
+              ([field, messages]) => [
+                field,
+                (Array.isArray(messages) ? messages : []).map((message) =>
+                  safeMessage(message, "Invalid value."),
+                ),
+              ],
+            ),
+          )
+        : undefined,
     );
   }
 
+  if (isErrorResponse(data))
+    throw new ApiError(fallbackMessage, response.status, data);
   return data as T;
 };
 
@@ -49,9 +65,36 @@ export const apiClient = async <T>(
 ): Promise<T> => {
   const { fallbackMessage = "Something went wrong.", ...requestOptions } =
     options;
-  const response = await fetch(path, requestOptions);
 
-  return parseApiResponse<T>(response, fallbackMessage);
+  let response: Response;
+
+  try {
+    response = await fetch(path, requestOptions);
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") throw error;
+    throw new ApiError(
+      "Unable to reach the server. Check your connection and try again.",
+      0,
+    );
+  }
+
+  const data = await parseApiResponse<T>(response, fallbackMessage);
+
+  if (
+    (requestOptions.method ?? "GET").toUpperCase() !== "GET" &&
+    response.status !== 204 &&
+    (typeof data !== "object" ||
+      data === null ||
+      !("success" in data) ||
+      data.success !== true)
+  ) {
+    throw new ApiError(
+      "Could not confirm the result. Check the record before trying again.",
+      502,
+    );
+  }
+
+  return data;
 };
 
 const safeJson = async (response: Response): Promise<unknown> => {

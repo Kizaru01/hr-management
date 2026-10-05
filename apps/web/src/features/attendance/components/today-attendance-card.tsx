@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError } from "@/lib/api/api.client";
@@ -114,13 +116,21 @@ export const TodayAttendanceCard = ({
     setPendingAction(action);
     setFeedback(null);
 
+    let mutationConfirmed = false;
     try {
-      const response =
-        action === "check-in" ? await checkIn() : await checkOut();
+      action === "check-in" ? await actionFeedback(() => checkIn(), {
+        success: "Checked in.",
+        error: "Unable to check in. Please try again.",
+      }) : await actionFeedback(() => checkOut(), {
+        success: "Checked out.",
+        error: "Unable to check out. Please try again.",
+      });
+      mutationConfirmed = true;
 
-      setFeedback({ type: "success", message: response.message });
+      setFeedback(null);
       router.refresh();
     } catch (error) {
+      if (mutationConfirmed) return;
       const fallbackMessage =
         action === "check-in" ? "Unable to check in." : "Unable to check out.";
 

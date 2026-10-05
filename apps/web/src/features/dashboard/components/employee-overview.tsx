@@ -2,14 +2,10 @@ import type { HrDashboardData } from "../types/dashboard";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface EmployeeOverviewProps {
-  employees: HrDashboardData["employees"];
-  activeAnnouncements: number;
+  employees: NonNullable<HrDashboardData["employees"]>;
 }
 
-export const EmployeeOverview = ({
-  employees,
-  activeAnnouncements,
-}: EmployeeOverviewProps) => {
+export const EmployeeOverview = ({ employees }: EmployeeOverviewProps) => {
   const items = [
     {
       label: "Total",
@@ -24,8 +20,8 @@ export const EmployeeOverview = ({
       value: employees.inactive,
     },
     {
-      label: "Active Announcements",
-      value: activeAnnouncements,
+      label: "Other employment statuses",
+      value: employees.other,
     },
   ];
 

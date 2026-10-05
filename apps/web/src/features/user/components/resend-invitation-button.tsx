@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback } from "@/lib/action-feedback";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Feedback } from "@/components/ui/feedback";
@@ -29,12 +31,19 @@ export function ResendInvitationButton({
     setIsSending(true);
     setFeedback(null);
 
+    let mutationConfirmed = false;
     try {
-      const response = await resendUserInvitation(userId);
+      const response = await actionFeedback(() => resendUserInvitation(userId), {
+        success: "Invitation sent.",
+        error: "Unable to resend user invitation. Please try again.",
+        loading: "Sending invitation...",
+      });
+      mutationConfirmed = true;
 
-      setFeedback({ tone: "success", message: response.message });
+      setFeedback(null);
       onSent?.(response.message);
     } catch (error) {
+      if (mutationConfirmed) return;
       setFeedback({
         tone: "error",
         message:

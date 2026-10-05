@@ -47,8 +47,8 @@ export function BranchManagement({
       ? sheet.content.branch
       : null;
 
-  const handleMutationSuccess = (message: string) => {
-    setFeedback({ type: "success", message });
+  const handleMutationSuccess = () => {
+    setFeedback(null);
     setStatusBranch(null);
     sheet.requestClose();
   };

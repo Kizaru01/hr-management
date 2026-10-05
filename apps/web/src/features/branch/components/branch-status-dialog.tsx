@@ -1,5 +1,7 @@
 "use client";
 
+import { actionFeedback } from "@/lib/action-feedback";
+
 import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -34,12 +36,18 @@ export function BranchStatusDialog({
     setIsChangingStatus(true);
     setErrorMessage(null);
 
+    let mutationConfirmed = false;
     try {
-      const response = await changeBranchStatus(branch.id, action);
+      const response = await actionFeedback(() => changeBranchStatus(branch.id, action), {
+        success: "Branch status updated.",
+        error: "Unable to change branch status. Please try again.",
+      });
+      mutationConfirmed = true;
 
       router.refresh();
       onSuccess(response.message);
     } catch (error) {
+      if (mutationConfirmed) return;
       setErrorMessage(
         error instanceof ApiError
           ? error.message

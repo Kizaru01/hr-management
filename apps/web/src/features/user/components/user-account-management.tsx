@@ -78,7 +78,7 @@ export function UserAccountManagement({
         autoFocusClose={sheet.content?.type === "details"}
       >
         {sheet.content?.type === "create" ? (
-          <CreateUserForm onCancel={sheet.requestClose} />
+          <CreateUserForm onCancel={sheet.requestClose} onSuccess={sheet.requestClose} />
         ) : sheet.content?.type === "details" ? (
           <UserDetails user={sheet.content.user} />
         ) : null}

@@ -4,8 +4,8 @@ import { apiClient } from "@/lib/api/api.client";
 export const terminateEmployee = async (
   employeeId: string,
   input: TerminateEmployeeInput,
-): Promise<void> => {
-  await apiClient(
+) => {
+  return apiClient(
     `/api/employees/${encodeURIComponent(employeeId)}/terminate`,
     {
       method: "PATCH",
